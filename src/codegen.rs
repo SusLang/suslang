@@ -49,6 +49,11 @@ pub fn gen_c_statement<W: Write>(s: Statement, buf: &mut W) -> std::io::Result<(
             writeln!(buf, "}}")?;
         }
         Statement::Declare(name, typ) => writeln!(buf, "{} {};", typ, name).unwrap(),
+        Statement::Define(name, expr) => {
+            write!(buf, "{} = ", name)?;
+            gen_c_expr(expr, buf);
+            writeln!(buf, ";");
+        }
     }
     Ok(())
 }

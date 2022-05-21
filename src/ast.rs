@@ -172,7 +172,7 @@ pub enum Statement {
     Return(Option<Expression>),
     Expr(Expression),
     Declare(String, Typ),
-    //Define(String, Expression)
+    Define(String, Expression)
 }
 
 impl Parse for Statement {
@@ -255,6 +255,20 @@ impl Parse for Statement {
                 //assert!(matches!(tokens.next(), Some(Token("\n")) | None));
 
                 Ok(Self::Declare(name.0.to_string(), typ))
+            }
+
+            Some(Token("make")) => { // make red 5
+                tokens
+                .next()
+                .ok_or_else(|| "Error, unexpected EOF".to_string())?; // make
+
+                let name = tokens
+                .next()
+                .ok_or_else(|| "Error, unexpected EOF".to_string())?; // red
+
+                let expr = Expression::parse(tokens)?;
+
+                Ok(Self::Define(name.0.to_string(), expr))
             }
 
             Some(_) => Expression::parse(tokens).map(Self::Expr),
