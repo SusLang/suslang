@@ -171,6 +171,8 @@ pub enum Statement {
     If(Expression, Block, Option<Block>),
     Return(Option<Expression>),
     Expr(Expression),
+    Declare(String, Typ),
+    //Define(String, Expression)
 }
 
 impl Parse for Statement {
@@ -232,6 +234,29 @@ impl Parse for Statement {
                 println!("{:?}", tokens.peek());
                 Ok(Self::If(expr, block, else_block))
             }
+
+            Some(Token("crewmate")) => { // crewmate red: int
+                tokens
+                .next()
+                .ok_or_else(|| "Error, unexpected EOF".to_string())?; // crewamte
+
+                let name = tokens
+                .next()
+                .ok_or_else(|| "Error, unexpected EOF".to_string())?; //red
+
+                assert_eq!(tokens.next(), Some(Token(":")));
+
+                let typ = tokens
+                .next()
+                .ok_or_else(|| "Error, unexpected EOF".to_string())
+                .and_then(Typ::parse_tok)?; // int
+
+                //assert_eq!(tokens.next(), Some(Token("ඞ")));
+                //assert!(matches!(tokens.next(), Some(Token("\n")) | None));
+
+                Ok(Self::Declare(name.0.to_string(), typ))
+            }
+
             Some(_) => Expression::parse(tokens).map(Self::Expr),
             None => Err("Expected tokens".to_string()),
         }
@@ -243,6 +268,8 @@ pub type Block = Vec<Statement>;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ast {
     Func(String, Typ, Vec<(String, Typ)>, Block),
+    //Declare(String, Typ),
+    //Define(String, Statement)
 }
 
 impl Parse for Ast {
@@ -309,6 +336,35 @@ impl Parse for Ast {
 
                 Ok(Self::Func(name.0.to_string(), typ, args, block))
             }
+
+            /*Some(Token("crewmate")) => { // crewmate red: int
+                tokens
+                .next()
+                .ok_or_else(|| "Error, unexpected EOF".to_string())?; // crewamte
+
+                let name = tokens
+                .next()
+                .ok_or_else(|| "Error, unexpected EOF".to_string())?; //red
+
+                assert_eq!(tokens.next(), Some(Token(":")));
+
+                let typ = tokens
+                .next()
+                .ok_or_else(|| "Error, unexpected EOF".to_string())
+                .and_then(Typ::parse_tok)?; // int
+
+                assert_eq!(tokens.next(), Some(Token("ඞ")));
+                assert!(matches!(tokens.next(), Some(Token("\n")) | None));
+
+                Ok(Self::Declare(name.0.to_string(), typ))
+            }*/
+
+            /*Some(Token("make")) => {
+                todo!();
+                tokens.next().ok_or_else(|| "Error, unexpected EOF".to_string())?; //make
+                //OK(Self::Define("not yet", ()));
+            }*/
+
             Some(x) => Err(format!("Error, unexpected token {:?}", x)),
             None => Err("Error, unexpected EOF".to_string()),
         }

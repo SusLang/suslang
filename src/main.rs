@@ -8,7 +8,7 @@ mod codegen;
 
 fn main() {
     println!("Hello, world!");
-    let helloworld = include_str!("../examples/sum.sus");
+    let helloworld = include_str!("../examples/var.sus");
 
 
     let tok = tokenize(helloworld);

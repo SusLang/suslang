@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{io::Write, fmt::write};
 
 use crate::ast::{Ast, Block, Expression, Statement, Typ, Operator};
 
@@ -14,6 +14,7 @@ pub fn gen_c<W: Write>(ast: Vec<Ast>, buf: &mut W) -> std::io::Result<()> {
     for a in ast {
         match a {
             Ast::Func(name, typ, args, block) => gen_c_func(name, typ, args, block, buf),
+            _ => todo!()
         }?;
     }
     Ok(())
@@ -46,8 +47,8 @@ pub fn gen_c_statement<W: Write>(s: Statement, buf: &mut W) -> std::io::Result<(
                 }
             }
             writeln!(buf, "}}")?;
-
         }
+        Statement::Declare(name, typ) => writeln!(buf, "{} {};", typ, name).unwrap(),
     }
     Ok(())
 }
