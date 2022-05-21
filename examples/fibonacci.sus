@@ -5,8 +5,6 @@ task fibo with crewmate yellow: number ➤ number
 චචeject + complete fibo with - yellow 1 complete fibo with - yellow 2ඞ
 
 
-
-
 task ඬ with ➤ number
 චcomplete report with "%d\n" and complete fibo with 4ඞ
 චeject 0ඞ

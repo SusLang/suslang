@@ -8,7 +8,7 @@ mod codegen;
 
 fn main() {
     println!("Hello, world!");
-    let helloworld = include_str!("../examples/fibonacci.sus");
+    let helloworld = include_str!("../examples/sum.sus");
 
 
     let tok = tokenize(helloworld);

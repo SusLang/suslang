@@ -1,10 +1,10 @@
 # ඬ>ඩ>ඹ>ච>ඞ
 
-# primero es el main
-# segugndo es comentario
-# tercero nada
-# cuarto tab
-# quinto ;
+primero es el main
+segugndo es comentario
+tercero nada
+cuarto tab
+quinto ;
 Compilamos a C
 
 
