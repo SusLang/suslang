@@ -9,8 +9,8 @@ impl<'a> PartialEq<&'a str> for Token<'a> {
 }
 
 
-const SPLIT_CHARS: &[char] = &[' ','ච','\"','ඞ','\n','➤', '(', ')', '\t'];
-const IGNORED_SEPARATORS: &[char] = &[' ', '\t'];
+const SPLIT_CHARS: &[char] = &[' ','ච','\"','ඞ','\n','➤', '(', ')', '\t', ':', '\r'];
+const IGNORED_SEPARATORS: &[char] = &[' ', '\t', '\r'];
 
 // චcomplete report "hello world"ඞ
 

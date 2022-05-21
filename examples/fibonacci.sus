@@ -1,9 +1,22 @@
+
+
+
+
+
+
 task fibo with crewmate yellow: number ➤ number
 චsus? < yellow 2
-චචeject 1ඞ
+චචeject yellowඞ
 චclean?
 චචeject + complete fibo with - yellow 1 complete fibo with - yellow 2ඞ
 
-task ඬ
-චcomplete report with complete fibo 4ඞ
-චejectඞ
+
+
+
+task ඬ with ➤ number
+චcomplete report with "%d\n" and complete fibo with 4ඞ
+චeject 0ඞ
+//kinda sus
+
+
+

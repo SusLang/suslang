@@ -2,6 +2,24 @@ use std::iter::Peekable;
 
 use crate::tokens::Token;
 
+fn read_block<'a, I: Iterator<Item = Token<'a>>>(tokens: &mut Peekable<I>) -> Vec<Token<'a>> {
+    let mut code_block = Vec::new();
+    loop {
+        if tokens.peek() != Some(&Token("ච")) {
+            break;
+        }
+        tokens.next();
+        for t in tokens.by_ref() {
+            code_block.push(t);
+            if t == Token("\n") {
+                break;
+            }
+        }
+    }
+
+    code_block
+}
+
 pub trait Parse: Sized {
     fn parse<'a, I: Iterator<Item = Token<'a>>>(tokens: &mut Peekable<I>) -> Result<Self, String>;
 }
@@ -29,16 +47,28 @@ impl std::fmt::Display for Typ {
     }
 }
 
+impl Typ {
+    fn parse_tok(tok: Token) -> Result<Self, String> {
+        match tok.0 {
+            "void" => Ok(Self::Void),
+            "number" => Ok(Self::Num),
+            "string" => Ok(Self::Str),
+            "bool" => Ok(Self::Bool),
+            x => Err(format!("Unexpected type: {}", x)),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operator {
-    // Add,
-    // Sub,
+    Add,
+    Sub,
     // Div,
     // Mul,
     // Mod,
     // Gt,
     // Get,
-    // Lt,
+    Lt,
     // Let,
     // Eq,
     // Not,
@@ -48,9 +78,10 @@ pub enum Operator {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expression {
     Call(String, Vec<Self>),
-    // Operation(Operator, Box<Expression>, Box<Expression>),
+    Operation(Operator, Box<Self>, Box<Self>),
     StringLit(String),
     NumLit(i32),
+    Variable(String),
 }
 
 impl Parse for Expression {
@@ -94,14 +125,41 @@ impl Parse for Expression {
 
                 Ok(Self::StringLit(s.0.to_string()))
             }
+            Some(Token("<")) => {
+                tokens.next();
+
+                let lhs = Self::parse(tokens)?;
+                let rhs = Self::parse(tokens)?;
+
+                Ok(Self::Operation(Operator::Lt, Box::new(lhs), Box::new(rhs)))
+            }
+            // TODO the rest of the logical ops
+            Some(Token("+")) => {
+                tokens.next();
+
+                let lhs = Self::parse(tokens)?;
+                let rhs = Self::parse(tokens)?;
+
+                Ok(Self::Operation(Operator::Add, Box::new(lhs), Box::new(rhs)))
+            }
+            Some(Token("-")) => {
+                tokens.next();
+
+                let lhs = Self::parse(tokens)?;
+                let rhs = Self::parse(tokens)?;
+
+                Ok(Self::Operation(Operator::Sub, Box::new(lhs), Box::new(rhs)))
+            }
+            // TODO the rest of the arithmetic ops
             Some(x) if x.0.chars().all(|n| n.is_digit(10)) => {
                 tokens.next();
                 Ok(Self::NumLit(x.0.parse().map_err(|x| {
                     format!("Error parsing number literal: {}", x)
                 })?))
             }
-            Some(_) => {
-                todo!("????????????????????????????????????EXPRESSION?????????????????????????")
+            Some(x) => {
+                tokens.next();
+                Ok(Self::Variable(x.0.to_string()))
             }
             None => Err("Expected tokens".to_string()),
         }
@@ -110,7 +168,7 @@ impl Parse for Expression {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
-    // If(Expression, Block, Option<Block>),
+    If(Expression, Block, Option<Block>),
     Return(Option<Expression>),
     Expr(Expression),
 }
@@ -128,6 +186,51 @@ impl Parse for Statement {
                 };
 
                 Ok(Self::Return(expr))
+            }
+            Some(Token("sus?")) => {
+                tokens.next();
+                let expr = Expression::parse(tokens)?;
+                println!("{:?}", expr);
+                tokens
+                    .next()
+                    .ok_or_else(|| "Error, unexpected EOF".to_string())
+                    .and_then(|x| match x {
+                        Token("\n") => Ok(()),
+                        x => Err(format!("Expected EOL: {:?}", x)),
+                    })?;
+                let mut code_block = read_block(tokens).into_iter().peekable();
+                let mut block = Block::new();
+                while code_block.peek().is_some() {
+                    let statement = Self::parse(&mut code_block)?;
+                    assert_eq!(code_block.next(), Some(Token("ඞ")));
+                    assert!(matches!(code_block.next(), Some(Token("\n")) | None));
+                    block.push(statement);
+                }
+                println!("{:?}", block);
+                println!("{:?}", tokens.peek());
+                let mut else_block = None;
+                if tokens.peek() == Some(&Token("clean?")) {
+                    tokens.next();
+                    tokens
+                        .next()
+                        .ok_or_else(|| "Error, unexpected EOF".to_string())
+                        .and_then(|x| match x {
+                            Token("\n") => Ok(()),
+                            x => Err(format!("Expected EOL: {:?}", x)),
+                        })?;
+                    let mut code_block = read_block(tokens).into_iter().peekable();
+                    let mut block = Block::new();
+                    while code_block.peek().is_some() {
+                        let statement = Self::parse(&mut code_block)?;
+                        assert_eq!(code_block.next(), Some(Token("ඞ")));
+                        assert!(matches!(code_block.next(), Some(Token("\n")) | None));
+                        block.push(statement);
+                    }
+                    else_block = Some(block)
+                }
+                println!("{:?}", else_block);
+                println!("{:?}", tokens.peek());
+                Ok(Self::If(expr, block, else_block))
             }
             Some(_) => Expression::parse(tokens).map(Self::Expr),
             None => Err("Expected tokens".to_string()),
@@ -155,55 +258,54 @@ impl Parse for Ast {
                 tokens
                     .next()
                     .ok_or_else(|| "Error, unexpected EOF".to_string())?; // with
-                                                                          // TODO Leer argumentos
-                let args = Vec::new();
-                tokens
-                    .next()
-                    .ok_or_else(|| "Error, unexpected EOF".to_string())?; // ➤
+
+                let mut args = Vec::new();
+
+                while let Some(x) = tokens.next() {
+                    if x == Token("➤") {
+                        break;
+                    } else {
+                        // dbg!(tokens
+                        //     .next()
+                        //     .ok_or_else(|| "Error, unexpected EOF".to_string())?); // crewmate
+
+                        let name = tokens
+                            .next()
+                            .ok_or_else(|| "Error, unexpected EOF".to_string())?;
+
+                        tokens
+                            .next()
+                            .ok_or_else(|| "Error, unexpected EOF".to_string())?; // :
+
+                        let typ = tokens
+                            .next()
+                            .ok_or_else(|| "Error, unexpected EOF".to_string())
+                            .and_then(Typ::parse_tok)?;
+
+                        args.push((name.0.to_string(), typ));
+                    }
+                }
                 let typ = tokens
                     .next()
                     .ok_or_else(|| "Error, unexpected EOF".to_string())
-                    .and_then(|tok| match tok.0 {
-                        "void" => Ok(Typ::Void),
-                        "number" => Ok(Typ::Num),
-                        "string" => Ok(Typ::Str),
-                        "bool" => Ok(Typ::Bool),
-                        x => Err(format!("Unexpected type: {}", x)),
-                    })?;
+                    .and_then(Typ::parse_tok)?;
 
                 tokens
                     .next()
                     .ok_or_else(|| "Error, unexpected EOF".to_string())?; // \n
 
-                let mut lines = Vec::new();
+                let mut code_block = read_block(tokens).into_iter().peekable();
+                // println!("{:?} {:?}", name, typ);
 
-                loop {
-                    let mut v = Vec::new();
-                    if tokens.peek() != Some(&Token("ච")) {
-                        break;
+                let mut block = Block::new();
+                while code_block.peek().is_some() {
+                    let statement = Statement::parse(&mut code_block)?;
+                    if !matches!(statement, Statement::If(_, _, _)) {
+                        assert_eq!(code_block.next(), Some(Token("ඞ")));
                     }
-                    tokens.next();
-                    for t in tokens.by_ref() {
-                        if t == Token("\n") {
-                            break;
-                        } else {
-                            v.push(t);
-                        }
-                    }
-                    lines.push(v);
+                    assert!(matches!(code_block.next(), Some(Token("\n")) | None));
+                    block.push(statement);
                 }
-                println!("{:?} {:?}", name, typ);
-                let block = lines
-                    .into_iter()
-                    .map(|line| {
-                        let mut tok = line.into_iter().peekable();
-                        let statement = Statement::parse(&mut tok);
-                        // println!("{:?} {:?}", statement, tok.next());
-                        assert_eq!(tok.next(), Some(Token("ඞ")));
-                        assert_eq!(tok.next(), None);
-                        statement
-                    })
-                    .collect::<Result<Block, String>>()?;
 
                 Ok(Self::Func(name.0.to_string(), typ, args, block))
             }
