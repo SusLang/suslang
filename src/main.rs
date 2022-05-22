@@ -1,6 +1,6 @@
 use std::{fs::File, io::{BufWriter, Write}};
 
-use crate::{tokens::{tokenize, Token}, ast::{Ast, Parse}};
+use crate::{tokens::{tokenize, Token}, ast::{Ast, Parse}, codegen::Codegen};
 
 mod ast;
 mod tokens;
@@ -34,7 +34,7 @@ fn main() {
     let f = File::create("tmp.c").unwrap();
 
     let mut buf = BufWriter::new(f);
-    codegen::gen_c(ast, &mut buf).unwrap();
+    codegen::C.gen(&ast.as_slice(), &mut buf).unwrap();
 
     buf.flush().unwrap();
 
