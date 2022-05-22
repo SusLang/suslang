@@ -39,8 +39,8 @@ impl std::fmt::Display for Typ {
             "{}",
             match self {
                 Self::Num => "int",
-                Self::Str => "char*",
-                Self::Bool => "int",
+                Self::Str => "string",
+                Self::Bool => "boolean",
                 Self::Void => "void",
             }
         )

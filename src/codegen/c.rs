@@ -1,29 +1,41 @@
 use std::{io::Write};
 
-use crate::ast::{Ast, Expression, Statement, Operator};
+use crate::ast::{Ast, Expression, Statement, Operator, Typ};
 
-use super::Codegen;
+use super::{Codegen, Typename};
 
 pub struct C;
 
 const NAME_REPLACE: &[(&str, &str)] = &[("ඬ", "main")];
 
-impl<W> Codegen<W, &[Ast]> for C where W: Write {
-    fn gen(&mut self, s: &&[Ast], buf: &mut W) -> std::io::Result<()> {
+impl Typename for C {
+    fn typename(t: &Typ) -> &'static str {
+        match t {
+            Typ::Num => "int",
+            Typ::Str => "char*",
+            Typ::Bool => "int",
+            Typ::Void => "void",
+        }
+    }
+}
+
+impl<W> Codegen<W, [Ast]> for C where W: Write {
+    fn gen(&mut self, s: &[Ast], buf: &mut W) -> std::io::Result<()> {
         writeln!(
 			buf,
-			r#"#include <stdio.h>
+			r#"// C code generated from suslang
+#include <stdio.h>
 #define report printf
 "#
 		)?;
-		for ast in *s {
+		for ast in s {
 			self.gen(ast, buf)?;
 		}
 		Ok(())
     }
 }
 
-impl<'a, W> Codegen<W, Ast> for C where W: Write {
+impl<W> Codegen<W, Ast> for C where W: Write {
     fn gen(&mut self, s: &Ast, buf: &mut W) -> std::io::Result<()> {
         match s {
             Ast::Func(name, typ, args, block) => {
@@ -34,13 +46,13 @@ impl<'a, W> Codegen<W, Ast> for C where W: Write {
 						break;
 					}
 				}
-				write!(buf, "{} {}(", typ, name)?;
+				write!(buf, "{} {}(", Self::typename(typ), name)?;
 				let args_len = args.len();
 				for (i, (name, typ)) in args.iter().enumerate() {
 					write!(
 						buf,
 						"{} {}{}",
-						typ,
+						Self::typename(typ),
 						name,
 						if i == args_len - 1 { "" } else { ", " }
 					)?;
@@ -58,7 +70,7 @@ impl<'a, W> Codegen<W, Ast> for C where W: Write {
     }
 }
 
-impl<'a, W> Codegen<W, Statement> for C where W: Write {
+impl<W> Codegen<W, Statement> for C where W: Write {
     fn gen(&mut self, s: &Statement, buf: &mut W) -> std::io::Result<()> {
         match s {
 			Statement::Return(n) => {
@@ -87,7 +99,7 @@ impl<'a, W> Codegen<W, Statement> for C where W: Write {
 				}
 				writeln!(buf, "}}")?;
 			}
-			Statement::Declare(name, typ) => writeln!(buf, "{} {};", typ, name).unwrap(),
+			Statement::Declare(name, typ) => writeln!(buf, "{} {};", Self::typename(typ), name).unwrap(),
 			Statement::Define(name, expr) => {
 				write!(buf, "{} = ", name)?;
 				self.gen(expr, buf)?;
@@ -98,7 +110,7 @@ impl<'a, W> Codegen<W, Statement> for C where W: Write {
     }
 }
 
-impl<'a, W> Codegen<W, Expression> for C where W: Write {
+impl<W> Codegen<W, Expression> for C where W: Write {
     fn gen(&mut self, expr: &Expression, buf: &mut W) -> std::io::Result<()> {
         match expr {
 			Expression::Call(func, args) => {

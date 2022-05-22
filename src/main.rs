@@ -8,7 +8,7 @@ mod codegen;
 
 fn main() {
     println!("Hello, world!");
-    let helloworld = include_str!("../examples/var.sus");
+    let helloworld = include_str!("../examples/helloworld.sus");
 
 
     let tok = tokenize(helloworld);
@@ -34,7 +34,14 @@ fn main() {
     let f = File::create("tmp.c").unwrap();
 
     let mut buf = BufWriter::new(f);
-    codegen::C.gen(&ast.as_slice(), &mut buf).unwrap();
+    codegen::C.gen(ast.as_slice(), &mut buf).unwrap();
+
+    buf.flush().unwrap();
+
+    let f = File::create("tmp.js").unwrap();
+
+    let mut buf = BufWriter::new(f);
+    codegen::Js.gen(ast.as_slice(), &mut buf).unwrap();
 
     buf.flush().unwrap();
 
