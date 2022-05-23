@@ -50,6 +50,13 @@ fn main() {
 
     buf.flush().unwrap();
 
+    let f = File::create("tmp.py").unwrap();
+
+    let mut buf = BufWriter::new(f);
+    codegen::Py.gen(ast.as_slice(), &mut buf).unwrap();
+
+    buf.flush().unwrap();
+
     // Command::new("gcc").arg("tmp.c").arg("-o").arg("sus.out").output().unwrap();
 
 }
