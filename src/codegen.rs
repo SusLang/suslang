@@ -14,6 +14,7 @@ pub trait Typename {
 
 pub use c::C;
 pub use js::Js;
+pub use scm::Scm;
 
 use crate::ast::Typ;
 

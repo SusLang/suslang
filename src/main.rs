@@ -43,6 +43,11 @@ fn main() {
     let mut buf = BufWriter::new(f);
     codegen::Js.gen(ast.as_slice(), &mut buf).unwrap();
 
+    let f = File::create("tmp.scm").unwrap();
+
+    let mut buf = BufWriter::new(f);
+    codegen::Scm.gen(ast.as_slice(), &mut buf);
+
     buf.flush().unwrap();
 
     // Command::new("gcc").arg("tmp.c").arg("-o").arg("sus.out").output().unwrap();

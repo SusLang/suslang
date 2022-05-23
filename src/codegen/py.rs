@@ -13,7 +13,7 @@ impl<W> Codegen<W, [Ast]> for Py where W: Write {
 			buf,
 			r#"# Python code generated from suslang
 def report
-"#
+"# // creo que quieres report = print y ya esta
 		)?;
 		for ast in s {
 			self.gen(ast, buf)?;
