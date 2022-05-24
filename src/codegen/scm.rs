@@ -9,7 +9,7 @@ pub struct Scm;
 fn default_value (typ: Typ) -> &'static str {
     match typ {
         Typ::Num => "0",
-        Typ::Str =>  "str",
+        Typ::Str =>  r#""""#,
         Typ::Bool => "false",
         Typ::Void => "void"
     }
@@ -127,7 +127,9 @@ impl<W> Codegen<W, Statement> for Scm where W: Write {
             Statement::If(cond, b, e) => {
                 write_eval("if", &[cond, &Block(b.as_slice()), &Block(e.as_ref().unwrap_or( &vec![]).as_slice())], buf)?;
             }
-            x => todo!("{:?}", x)
+            Statement::Declare(name, typ) => write_eval("define", &[&Expression::Variable(name.to_string()), &Expression::Variable(default_value(*typ).to_string())], buf)?,
+            Statement::Define(name, val) => write_eval("set!", &[&Expression::Variable(name.to_string()), val], buf)?,
+            //x => todo!("{:?}", x)
         }
         Ok(())
     }
@@ -156,12 +158,13 @@ impl<W> Codegen<W, Expression> for Scm where W: Write {
                     Operator::Sub => write_eval("-", &[b1.as_ref(), b2.as_ref()], buf)?,
                     Operator::Lt => write_eval("<", &[b1.as_ref(), b2.as_ref()], buf)?,
 
-                    
+                    #[allow(unreachable_patterns)]
                     x => todo!("{:?}", x)
                 }
             }
+            #[allow(unreachable_patterns)]
             x => todo!("{:?}", x)
         }
         Ok(())
     }
-}
+}//scheme *

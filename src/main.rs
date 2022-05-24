@@ -9,7 +9,7 @@ mod typecheck;
 
 fn main() {
     println!("Hello, world!");
-    let helloworld = include_str!("../examples/ifs.sus");
+    let helloworld = include_str!("../examples/var.sus");
 
 
     let tok = tokenize(helloworld);
