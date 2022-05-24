@@ -5,6 +5,7 @@ use crate::{tokens::{tokenize, Token}, ast::{Ast, Parse}, codegen::Codegen};
 mod ast;
 mod tokens;
 mod codegen;
+mod typecheck;
 
 fn main() {
     println!("Hello, world!");

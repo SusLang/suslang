@@ -30,6 +30,7 @@ pub enum Typ {
     Str,
     Bool,
     Void,
+    // function???
 }
 
 impl std::fmt::Display for Typ {
