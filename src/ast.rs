@@ -208,8 +208,8 @@ impl Parse for Statement {
                     assert!(matches!(code_block.next(), Some(Token("\n")) | None));
                     block.push(statement);
                 }
-                println!("{:?}", block);
-                println!("{:?}", tokens.peek());
+                println!("if {:?}", block);
+                println!("next {:?}", tokens.peek());
                 let mut else_block = None;
                 if tokens.peek() == Some(&Token("clean?")) {
                     tokens.next();
@@ -230,8 +230,8 @@ impl Parse for Statement {
                     }
                     else_block = Some(block)
                 }
-                println!("{:?}", else_block);
-                println!("{:?}", tokens.peek());
+                println!("else {:?}", else_block);
+                println!("next {:?}", tokens.peek());
                 Ok(Self::If(expr, block, else_block))
             }
 
@@ -343,8 +343,10 @@ impl Parse for Ast {
                     let statement = Statement::parse(&mut code_block)?;
                     if !matches!(statement, Statement::If(_, _, _)) {
                         assert_eq!(code_block.next(), Some(Token("ඞ")));
+                        assert!(matches!(code_block.next(), Some(Token("\n")) | None));
                     }
-                    assert!(matches!(code_block.next(), Some(Token("\n")) | None));
+                    // dbg!(&statement);
+                    // dbg!(code_block.peek());
                     block.push(statement);
                 }
 

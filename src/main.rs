@@ -8,7 +8,7 @@ mod codegen;
 
 fn main() {
     println!("Hello, world!");
-    let helloworld = include_str!("../examples/helloworld.sus");
+    let helloworld = include_str!("../examples/ifs.sus");
 
 
     let tok = tokenize(helloworld);
@@ -46,7 +46,7 @@ fn main() {
     let f = File::create("tmp.scm").unwrap();
 
     let mut buf = BufWriter::new(f);
-    codegen::Scm.gen(ast.as_slice(), &mut buf);
+    codegen::Scm.gen(ast.as_slice(), &mut buf).unwrap();
 
     buf.flush().unwrap();
 
