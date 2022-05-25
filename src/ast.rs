@@ -82,6 +82,7 @@ pub enum Expression {
     Operation(Operator, Box<Self>, Box<Self>),
     StringLit(String),
     NumLit(i32),
+    BoolLit(bool),
     Variable(String),
 }
 
@@ -157,6 +158,14 @@ impl Parse for Expression {
                 Ok(Self::NumLit(x.0.parse().map_err(|x| {
                     format!("Error parsing number literal: {}", x)
                 })?))
+            }
+            Some(Token("sus")) => {
+                tokens.next();
+                Ok(Self::BoolLit(true))
+            }
+            Some(Token("clean")) => {
+                tokens.next();
+                Ok(Self::BoolLit(false))
             }
             Some(x) => {
                 tokens.next();
