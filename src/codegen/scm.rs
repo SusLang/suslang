@@ -6,7 +6,7 @@ use super::{Codegen, Codegeneable};
 
 pub struct Scm;
 
-fn default_value (typ: Typ) -> &'static str {
+const fn default_value (typ: Typ) -> &'static str {
     match typ {
         Typ::Num => "0",
         Typ::Str =>  r#""""#,
@@ -75,8 +75,8 @@ impl<W> Codegen<W, Ast> for Scm where W: Write {
     }
 }
 
-impl<W> Codegen<W, [&dyn super::Codegeneable<W, Scm>]> for Scm where W: Write {
-    fn gen(&mut self, s: &[&dyn super::Codegeneable<W, Scm>], buf: &mut W) -> std::io::Result<()> {
+impl<W> Codegen<W, [&dyn super::Codegeneable<W, Self>]> for Scm where W: Write {
+    fn gen(&mut self, s: &[&dyn super::Codegeneable<W, Self>], buf: &mut W) -> std::io::Result<()> {
         write!(buf, "( ")?;
         for c in s {
             (*c).gen(self, buf)?;
@@ -144,7 +144,7 @@ impl<W> Codegen<W, Expression> for Scm where W: Write {
                     self.gen(t, buf)?;
                 }
                 writeln!(buf, ")")?;*/
-                write_eval(name, args.iter().map(|x| x as &dyn Codegeneable<W, Scm>).collect::<Vec<_>>().as_slice(), buf)?;
+                write_eval(name, args.iter().map(|x| x as &dyn Codegeneable<W, Self>).collect::<Vec<_>>().as_slice(), buf)?;
             }
 
 			Expression::NumLit(s) => write!(buf, "{}", s)?,

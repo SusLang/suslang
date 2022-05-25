@@ -31,6 +31,8 @@ fn main() {
     }
     println!("{:?}", ast);
 
+    typecheck::typecheck(&ast);
+
 
     let f = File::create("tmp.c").unwrap();
 
@@ -54,7 +56,7 @@ fn main() {
     let f = File::create("tmp.py").unwrap();
 
     let mut buf = BufWriter::new(f);
-    codegen::Py.gen(ast.as_slice(), &mut buf).unwrap();
+    codegen::Py::new().gen(ast.as_slice(), &mut buf).unwrap();
 
     buf.flush().unwrap();
 

@@ -1,13 +1,21 @@
 use std::io::Write;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::ast::{Ast, Expression, Statement, Operator, Typ};
 
 use super::Codegen;
 
-pub struct Py;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Py {
+	tab_count: usize
+}
 
-fn default_value(typ: &Typ) -> &'static str {
+impl Py {
+	pub fn new() -> Self {
+		Self::default()
+	}
+}
+
+const fn default_value(typ: &Typ) -> &'static str {
     match typ {
         Typ::Num => "0",
         Typ::Str =>  "\"\"",
@@ -16,19 +24,19 @@ fn default_value(typ: &Typ) -> &'static str {
     }
 }
 
-static TAB_COUNT: AtomicUsize = AtomicUsize::new(0);
+// static TAB_COUNT: AtomicUsize = AtomicUsize::new(0);
 
-fn add_tabs() {
-	TAB_COUNT.fetch_add(1, Ordering::SeqCst);
-}
+// fn add_tabs() {
+// 	TAB_COUNT.fetch_add(1, Ordering::SeqCst);
+// }
 
-fn sub_tabs() {
-	TAB_COUNT.fetch_sub(1, Ordering::SeqCst);
-}
+// fn sub_tabs() {
+// 	TAB_COUNT.fetch_sub(1, Ordering::SeqCst);
+// }
 
-fn get_tabs() -> usize {
-	TAB_COUNT.load(Ordering::SeqCst)
-}
+// fn get_tabs() -> usize {
+// 	TAB_COUNT.load(Ordering::SeqCst)
+// }
 
 impl<W> Codegen<W, [Ast]> for Py where W: Write {
     fn gen(&mut self, s: &[Ast], buf: &mut W) -> std::io::Result<()> {
@@ -65,11 +73,11 @@ impl<W> Codegen<W, Ast> for Py where W: Write {
 				}
 				writeln!(buf, "):")?;
 				// var_tab_count = var_tab_count + 1;
-				add_tabs();
+				self.tab_count += 1;
 				for line in block {
 					self.gen(line, buf)?;
 				}
-				sub_tabs();
+				self.tab_count -= 1;
 				Ok(())
 			}
 		}
@@ -80,41 +88,41 @@ impl<W> Codegen<W, Statement> for Py where W: Write {
     fn gen(&mut self, s: &Statement, buf: &mut W) -> std::io::Result<()> {
         match s {
 			Statement::Return(n) => {
-				write!(buf, "{}return ", "\t".repeat(get_tabs()))?;
+				write!(buf, "{}return ", "\t".repeat(self.tab_count))?;
 				if let Some(n) = n {
                     self.gen(n, buf)?;
                 };
-				writeln!(buf, "")?;
+				writeln!(buf)?;
 			}
 			Statement::Expr(m) => {
-				write!(buf, "{}", "\t".repeat(get_tabs()))?;
+				write!(buf, "{}", "\t".repeat(self.tab_count))?;
 				self.gen(m, buf)?;
-				writeln!(buf, "")?;
+				writeln!(buf)?;
 			}
 			Statement::If(cond, b, e) => {
-				write!(buf, "{}if ", "\t".repeat(get_tabs()))?;
+				write!(buf, "{}if ", "\t".repeat(self.tab_count))?;
 				self.gen(cond, buf)?;
 				writeln!(buf, ":")?;
-				add_tabs();
+				self.tab_count += 1;
 				for s in b {
 					self.gen(s, buf)?;
 				}
 				// tab_count = tab_count - 1;
 				if let Some(e) = e {
 					// tab_count = tab_count + 1;
-					writeln!(buf, "{}else:", "\t".repeat(get_tabs() - 1))?;
+					writeln!(buf, "{}else:", "\t".repeat(self.tab_count - 1))?;
 					for s in e {
 						self.gen(s, buf)?;
 					}
 				}
-				sub_tabs();
-				writeln!(buf, "")?;
+				self.tab_count -= 1;
+				writeln!(buf)?;
 			}
-			Statement::Declare(name, typ) => writeln!(buf, "{}{} = {}", "\t".repeat(get_tabs()), name, default_value(typ)).unwrap(),
+			Statement::Declare(name, typ) => writeln!(buf, "{}{} = {}", "\t".repeat(self.tab_count), name, default_value(typ)).unwrap(),
 			Statement::Define(name, expr) => {
-				write!(buf, "{}{} = ", "\t".repeat(get_tabs()), name)?;
+				write!(buf, "{}{} = ", "\t".repeat(self.tab_count), name)?;
 				self.gen(expr, buf)?;
-				writeln!(buf, "")?;
+				writeln!(buf)?;
 			}
 		}
 		Ok(())
