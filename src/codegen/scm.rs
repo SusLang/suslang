@@ -10,7 +10,7 @@ fn default_value (typ: Typ) -> &'static str {
     match typ {
         Typ::Num => "0",
         Typ::Str =>  r#""""#,
-        Typ::Bool => "false",
+        Typ::Bool => "'false",
         Typ::Void => "void"
     }
 }
@@ -40,7 +40,7 @@ fn write_eval<W>(operator: &str, operands: &[&dyn super::Codegeneable<W, Scm>], 
     Ok(())
 }
 
-impl <W> Codegen<W, [Ast]> for  Scm  where W: Write { // main one
+impl <W> Codegen<W, [Ast]> for Scm  where W: Write { // main one
     fn gen(&mut self, s: &[Ast], buf: &mut W) -> std::io::Result<()> {
         writeln!(buf, r#"; scheme code generated from suslang
 ( define ( report f )
@@ -151,6 +151,8 @@ impl<W> Codegen<W, Expression> for Scm where W: Write {
 			Expression::StringLit(s) => write!(buf, "\"{}\"", s)?,
 
             Expression::Variable(v) => write!(buf, " {} ", v)?,
+
+            Expression::BoolLit(b) => write!(buf, "{}", if *b {"'true"} else {"'false"})?,
 
             Expression::Operation(op, b1, b2) => {
                 match op {
