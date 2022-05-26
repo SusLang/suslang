@@ -149,7 +149,7 @@ impl<W> Codegen<W, Expression> for C where W: Write {
 				self.gen(rhs.as_ref(), buf)?;
 			}
 			Expression::Variable(x) => write!(buf, "{}", x)?,
-			x => todo!("{:?}", x)
+			Expression::BoolLit(b) => write!(buf, "{}", if *b {1} else {0})?,
 		};
 		Ok(())
     }

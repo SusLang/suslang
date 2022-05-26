@@ -164,9 +164,8 @@ impl<W> Codegen<W, Expression> for Py where W: Write {
             }
             Expression::StringLit(s) => write!(buf, "\"{}\"", s)?,
             Expression::NumLit(n) => write!(buf, "{}", n)?,
+            Expression::BoolLit(b) => write!(buf, "{}", if *b {"True"} else {"False"})?,
             Expression::Variable(n) => write!(buf, "{}", n)?,
-
-			x => todo!("{:?}", x)
 		};
 		Ok(())
 	}

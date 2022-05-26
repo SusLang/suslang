@@ -119,8 +119,8 @@ impl<W: Write> Codegen<W, Expression> for Js {
             }
             Expression::StringLit(s) => write!(buf, "\"{}\"", s)?,
             Expression::NumLit(n) => write!(buf, "{}", n)?,
+            Expression::BoolLit(b) => write!(buf, "{}", b)?,
             Expression::Variable(n) => write!(buf, "{}", n)?,
-            x => todo!("{:?}", x)
         };
         Ok(())
     }

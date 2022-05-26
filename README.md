@@ -64,3 +64,9 @@ dead body reported at line <n> (syntax again?) random
 program was ejected (segmentation fault. core dumped)
 
 stop! he's already dead -> double free // ME ENCANTA
+
+# TODO
+* Actual errors, not panics
+* Tests
+* Fix JS report fn
+* Custom formatting
