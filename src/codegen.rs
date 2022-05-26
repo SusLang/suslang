@@ -9,11 +9,11 @@ pub trait Codegen<W: Write, T: ?Sized> {
     fn gen(&mut self, s: &T, buf: &mut W) -> std::io::Result<()>;
 }
 
-pub trait Typename {
+trait Typename {
     fn typename(t: &Typ) -> &'static str;
 }
 
-pub trait Codegeneable<W, C> { //idea de Juan
+trait Codegeneable<W, C> {
     fn gen(&self, codegen: &mut C, buf: &mut W) -> std::io::Result<()>;
 }
 

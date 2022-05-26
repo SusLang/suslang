@@ -1,8 +1,8 @@
 // Replace with Typ if functions is added as a type
 
-use std::{collections::HashMap, fmt::Debug};
+use std::fmt::Debug;
 
-use crate::ast::{Ast, Expression, Operator, Statement, Typ};
+use crate::{ast::{Ast, Expression, Operator, Statement, Typ}, scope::{GlobalScope, Scope}};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Type {
@@ -24,100 +24,6 @@ impl From<Typ> for Type {
     }
 }
 
-trait Scope<'a, 'b>
-where
-    'a: 'b,
-{
-    fn add(&mut self, s: &'a str, t: Type);
-
-    fn push<'c>(&'b mut self) -> InnerScope<'a, 'c>
-    where
-        'b: 'c;
-
-    fn get(&self, s: &str) -> Option<&Type>;
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-struct GlobalScope<'a> {
-    top_level: HashMap<&'a str, Type>,
-    data: Vec<HashMap<&'a str, Type>>,
-}
-
-impl<'a> GlobalScope<'a> {
-    fn new() -> Self {
-        Self::default()
-    }
-
-    fn pop(&mut self) {
-        self.data.pop();
-    }
-}
-
-impl<'a, 'b> Scope<'a, 'b> for GlobalScope<'a>
-where
-    'a: 'b,
-{
-    fn add(&mut self, s: &'a str, t: Type) {
-        self.data
-            .last_mut()
-            .unwrap_or(&mut self.top_level)
-            .insert(s, t);
-    }
-
-    fn push<'c>(&'b mut self) -> InnerScope<'a, 'c>
-    where
-        'b: 'c,
-    {
-        self.data.push(Default::default());
-        InnerScope { parent: self }
-    }
-
-    fn get(&self, s: &str) -> Option<&Type> {
-        self.data
-            .iter()
-            .rev()
-            .chain(std::iter::once(&self.top_level))
-            .map(|x| x.get(s))
-            .find(|x| x.is_some())
-            .flatten()
-    }
-}
-
-struct InnerScope<'a, 'b>
-where
-    'a: 'b,
-{
-    parent: &'b mut GlobalScope<'a>,
-}
-
-impl<'a, 'b> Drop for InnerScope<'a, 'b> {
-    fn drop(&mut self) {
-        self.parent.pop();
-    }
-}
-
-impl<'a, 'b> Debug for InnerScope<'a, 'b> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.parent)
-    }
-}
-
-impl<'a, 'b> Scope<'a, 'b> for InnerScope<'a, 'b> {
-    fn push<'c>(&'c mut self) -> InnerScope<'a, 'c>
-    where
-        'b: 'c,
-    {
-        self.parent.push()
-    }
-
-    fn add(&mut self, s: &'a str, t: Type) {
-        self.parent.add(s, t)
-    }
-
-    fn get(&self, s: &str) -> Option<&Type> {
-        self.parent.get(s)
-    }
-}
 
 pub fn typecheck(a: &[Ast]) {
     let mut scopes = GlobalScope::new();
@@ -133,8 +39,6 @@ pub fn typecheck(a: &[Ast]) {
         }
     }
 
-    dbg!(&scopes);
-
     for a in a {
         match a {
             Ast::Func(name, ret, args, body) => {
@@ -145,58 +49,62 @@ pub fn typecheck(a: &[Ast]) {
                     scope.add(name, (*t).into());
                 }
                 
-                for line in body {
-                    match line {
-                        Statement::If(cond, _body, _else_body) => {
-                            // typecheck condition
-                            let e_type = typecheck_expr(&mut scope, f_name, cond);
-                            if e_type != Type::Bool {
-                                panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
-                            }
-                            // TODO Check body and else
-                        }
-                        Statement::Return(x) => {
-                            // Check expression type is the same as ret
-                            let e_type = x
-                                .as_ref()
-                                .map(|x| typecheck_expr(&mut scope, f_name, x))
-                                .unwrap_or(Type::Void);
-                            if e_type != ret {
-                                panic!("Error on return type for function {f_name}: expected {ret:?} but found {e_type:?}")
-                            }
-                            break;
-                        }
-                        Statement::Expr(e) => {
-                            // Typecheck expression
-                            typecheck_expr(&mut scope, f_name, e);
-                        }
-                        Statement::Declare(name, t) => {
-                            scope.add(name, (*t).into());
-                        }
-                        Statement::Define(name, e) => {
-                            let t = scope.get(name).cloned();
-                            t.map_or_else(|| {
-                                panic!("{} is not defined", name);
-                            }, |t| {
-                                let e_type = typecheck_expr(&mut scope, f_name, e);
-                                if t != e_type {
-                                    panic!("Error on variable assigment in function {f_name}: Expected {t:?}, but found {e_type:?}");
-                                }
-                            })
-                        }
-                    }
-                }
-                // drop scope
+                typecheck_body(scope, f_name, &ret, body);
             }
         }
     }
 }
 
+fn typecheck_body<'a, S>(mut scope: S, f_name: &str, ret: &Type, body: &'a [Statement]) where S: Scope<'a, Type> {
+    for line in body {
+        match line {
+            Statement::If(cond, body, else_body) => {
+                // typecheck condition
+                let e_type = typecheck_expr(&mut scope, f_name, cond);
+                if e_type != Type::Bool {
+                    panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
+                }
+                typecheck_body(scope.push(), f_name, ret, body);
+                if let Some(else_body) = else_body.as_ref() {
+                    typecheck_body(scope.push(), f_name, ret, else_body);
+                }
+            }
+            Statement::Return(x) => {
+                // Check expression type is the same as ret
+                let e_type = x
+                    .as_ref()
+                    .map(|x| typecheck_expr(&mut scope, f_name, x))
+                    .unwrap_or(Type::Void);
+                if &e_type != ret {
+                    panic!("Error on return type for function {f_name}: expected {ret:?} but found {e_type:?}")
+                }
+                break;
+            }
+            Statement::Expr(e) => {
+                // Typecheck expression
+                typecheck_expr(&mut scope, f_name, e);
+            }
+            Statement::Declare(name, t) => {
+                scope.add(name, (*t).into());
+            }
+            Statement::Define(name, e) => {
+                let t = scope.get(name).cloned();
+                t.map_or_else(|| {
+                    panic!("{} is not defined", name);
+                }, |t| {
+                    let e_type = typecheck_expr(&mut scope, f_name, e);
+                    if t != e_type {
+                        panic!("Error on variable assigment in function {f_name}: Expected {t:?}, but found {e_type:?}");
+                    }
+                })
+            }
+        }
+    }
+}
 
-fn typecheck_expr<'a, 'b, S>(scope: &mut S, f_name: &str, e: &Expression) -> Type
+fn typecheck_expr<'a, S>(scope: &mut S, f_name: &str, e: &Expression) -> Type
 where
-    'a: 'b,
-    S: Scope<'a, 'b>,
+    S: Scope<'a, Type> + ?Sized,
 {
     match e {
         Expression::Call(name, args) if name == "report" => {
@@ -214,8 +122,8 @@ where
             {
                 if c[0] == '%' {
                     match c[1] {
-                        'd' => expected_args.push(Type::Number),
-                        's' => expected_args.push(Type::String),
+                        'd' => expected_args.push(vec![Type::Number, Type::Bool]),
+                        's' => expected_args.push(vec![Type::String]),
                         '%' => (), // Ignore
                         x => panic!("On function {f_name}: Unexpected char {x:?} after %")
                     }
@@ -227,7 +135,7 @@ where
                 panic!("On function {f_name}: Unexpected number of format arguments on report, expected {}, but found {}", expected_args.len(), args.len()-1);
             }
             for (found, expected) in args.iter().skip(1).map(|x| typecheck_expr(scope, f_name, x)).zip(expected_args) {
-                if expected != found {
+                if !expected.contains(&found) {
                     will_crash = true;
                     eprintln!("On function {f_name}: In arguments for call to report expected {expected:?}, but found {found:?}")
                 }
