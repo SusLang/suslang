@@ -1,4 +1,4 @@
-use std::{fs::File, io::{BufWriter, Write}};
+use std::{fs::File, io::{BufWriter, Write}, path::Path};
 
 use crate::{tokens::{tokenize, Token}, ast::{Ast, Parse}, codegen::{Codegen}};
 
@@ -75,10 +75,10 @@ fn main() {
 }*/
 
 
-fn codegen_file<'a, C: Codegen<BufWriter<File>, [Ast]>>(file: &str, cod: &mut C, ast: &'a [Ast]) {
+fn codegen_file<C, P>(file: P, cod: &mut C, ast: &[Ast]) where C: Codegen<BufWriter<File>, [Ast]>, P: AsRef<Path> {
     let f = File::create(file).unwrap();
     let mut buf = BufWriter::new(f);
-    cod.gen(&ast, &mut buf).unwrap();
+    cod.gen(ast, &mut buf).unwrap();
     buf.flush().unwrap();
 }
 

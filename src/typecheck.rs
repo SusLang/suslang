@@ -310,7 +310,6 @@ where
             .get(name)
             .cloned()
             .unwrap_or_else(|| panic!("On function {f_name}: Variable {name} not declared")),
-    
-    x => todo!()
+        Expression::BoolLit(_) => Type::Bool,
     }
 }
