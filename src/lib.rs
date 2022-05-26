@@ -5,7 +5,7 @@ use codegen::Codegen;
 
 use crate::{tokens::{tokenize, Token}, ast::Parse};
 
-mod ast;
+pub mod ast;
 mod tokens;
 pub mod codegen;
 mod scope;

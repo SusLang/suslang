@@ -70,3 +70,4 @@ stop! he's already dead -> double free // ME ENCANTA
 * Tests
 * Fix JS report fn
 * Custom formatting
+* Checks for main function types

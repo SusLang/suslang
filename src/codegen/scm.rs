@@ -125,8 +125,14 @@ impl<W> Codegen<W, Statement> for Scm where W: Write {
             }
 
             Statement::If(cond, b, e) => {
-                write_eval("if", &[cond, &Block(b.as_slice()), &Block(e.as_ref().unwrap_or( &vec![]).as_slice())], buf)?;
+                if let Some(b2) = e {
+                    write_eval("if", &[cond, &Block(b.as_slice()), &Block(b2.as_slice())], buf)?;
+                }
+                else {
+                    write_eval("if", &[cond, &Block(b.as_slice())], buf)?;
+                }
             }
+
             Statement::Declare(name, typ) => write_eval("define", &[&Expression::Variable(name.to_string()), &Expression::Variable(default_value(*typ).to_string())], buf)?,
             Statement::Define(name, val) => write_eval("set!", &[&Expression::Variable(name.to_string()), val], buf)?,
             //x => todo!("{:?}", x)
