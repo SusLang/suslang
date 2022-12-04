@@ -2,7 +2,10 @@
 
 use std::fmt::Debug;
 
-use crate::{ast::{Ast, Expression, Operator, Statement, Typ}, scope::{GlobalScope, Scope}};
+use crate::{
+    ast::{Ast, Expression, Operator, Statement, Typ},
+    scope::{GlobalScope, Scope},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Type {
@@ -23,7 +26,6 @@ impl From<Typ> for Type {
         }
     }
 }
-
 
 pub fn typecheck(a: &[Ast]) {
     let mut scopes = GlobalScope::new();
@@ -48,14 +50,17 @@ pub fn typecheck(a: &[Ast]) {
                 for (name, t) in args {
                     scope.add(name, (*t).into());
                 }
-                
+
                 typecheck_body(scope, f_name, &ret, body);
             }
         }
     }
 }
 
-fn typecheck_body<'a, S>(mut scope: S, f_name: &str, ret: &Type, body: &'a [Statement]) where S: Scope<'a, Type> {
+fn typecheck_body<'a, S>(mut scope: S, f_name: &str, ret: &Type, body: &'a [Statement])
+where
+    S: Scope<'a, Type>,
+{
     for line in body {
         match line {
             Statement::If(cond, body, else_body) => {
@@ -115,26 +120,35 @@ where
             let mut expected_args = Vec::new();
             for c in match args.first() {
                 Some(Expression::StringLit(s)) => s,
-                Some(e) => panic!("On function {f_name}: Expected string literal on report, found {e:?}"),
+                Some(e) => {
+                    panic!("On function {f_name}: Expected string literal on report, found {e:?}")
+                }
                 None => unreachable!(),
             }
-            .chars().collect::<Vec<_>>().windows(2)
+            .chars()
+            .collect::<Vec<_>>()
+            .windows(2)
             {
                 if c[0] == '%' {
                     match c[1] {
                         'd' => expected_args.push(vec![Type::Number, Type::Bool]),
                         's' => expected_args.push(vec![Type::String]),
                         '%' => (), // Ignore
-                        x => panic!("On function {f_name}: Unexpected char {x:?} after %")
+                        x => panic!("On function {f_name}: Unexpected char {x:?} after %"),
                     }
                 }
             }
 
             let mut will_crash = false;
-            if expected_args.len() != args.len()-1 {
+            if expected_args.len() != args.len() - 1 {
                 panic!("On function {f_name}: Unexpected number of format arguments on report, expected {}, but found {}", expected_args.len(), args.len()-1);
             }
-            for (found, expected) in args.iter().skip(1).map(|x| typecheck_expr(scope, f_name, x)).zip(expected_args) {
+            for (found, expected) in args
+                .iter()
+                .skip(1)
+                .map(|x| typecheck_expr(scope, f_name, x))
+                .zip(expected_args)
+            {
                 if !expected.contains(&found) {
                     will_crash = true;
                     eprintln!("On function {f_name}: In arguments for call to report expected {expected:?}, but found {found:?}")
@@ -149,7 +163,10 @@ where
 
         Expression::Call(name, args) if name == "len" => {
             if args.len() != 1 {
-                panic!("On function {f_name}: Expected 1 argument for len, found {}", args.len());
+                panic!(
+                    "On function {f_name}: Expected 1 argument for len, found {}",
+                    args.len()
+                );
             }
             let t = typecheck_expr(scope, f_name, args.first().unwrap());
             if t != Type::String {
@@ -160,10 +177,14 @@ where
 
         Expression::Call(name, args) if name == "getelement" => {
             if args.len() != 2 {
-                panic!("On function {f_name}: Expected 2 arguments for getelement, found {}", args.len());
+                panic!(
+                    "On function {f_name}: Expected 2 arguments for getelement, found {}",
+                    args.len()
+                );
             }
             let t = typecheck_expr(scope, f_name, args.first().unwrap());
-            if t != Type::String { // for now only strings
+            if t != Type::String {
+                // for now only strings
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
             let t = typecheck_expr(scope, f_name, args.last().unwrap());
@@ -175,10 +196,14 @@ where
 
         Expression::Call(name, args) if name == "setelelment" => {
             if args.len() != 3 {
-                panic!("On function {f_name}: Expected 3 arguments for setelement, found {}", args.len());
+                panic!(
+                    "On function {f_name}: Expected 3 arguments for setelement, found {}",
+                    args.len()
+                );
             }
             let t = typecheck_expr(scope, f_name, args.first().unwrap());
-            if t != Type::String { // for now only strings
+            if t != Type::String {
+                // for now only strings
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
             let t = typecheck_expr(scope, f_name, args.get(1).unwrap());
@@ -194,7 +219,10 @@ where
         //TODO: move this to string library, doing this here is a hack
         Expression::Call(name, args) if name == "replace" => {
             if args.len() != 3 {
-                panic!("On function {f_name}: Expected 3 arguments for replace, found {}", args.len());
+                panic!(
+                    "On function {f_name}: Expected 3 arguments for replace, found {}",
+                    args.len()
+                );
             }
             let t = typecheck_expr(scope, f_name, args.first().unwrap());
             if t != Type::String {
@@ -213,7 +241,10 @@ where
 
         Expression::Call(name, args) if name == "split" => {
             if args.len() != 2 {
-                panic!("On function {f_name}: Expected 2 arguments for split, found {}", args.len());
+                panic!(
+                    "On function {f_name}: Expected 2 arguments for split, found {}",
+                    args.len()
+                );
             }
             let t = typecheck_expr(scope, f_name, args.first().unwrap());
             if t != Type::String {
@@ -228,7 +259,10 @@ where
 
         Expression::Call(name, args) if name == "openfile" => {
             if args.len() != 1 {
-                panic!("On function {f_name}: Expected 1 argument for openfile, found {}", args.len());
+                panic!(
+                    "On function {f_name}: Expected 1 argument for openfile, found {}",
+                    args.len()
+                );
             }
             let t = typecheck_expr(scope, f_name, args.first().unwrap());
             if t != Type::String {
@@ -237,7 +271,6 @@ where
             Type::String // technically it's a list of strings, but we don't have that yet
         }
         //end of string library
-
         Expression::Call(name, args) => {
             match scope.get(name).cloned() {
                 Some(Type::Function(args_t, ret)) => {

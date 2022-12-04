@@ -75,7 +75,7 @@ pub enum Operator {
     // Get,
     Lt,
     // Let,
-     Eq,
+    Eq,
     // Not,
     // NotEq
 }
