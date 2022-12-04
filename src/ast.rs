@@ -1,3 +1,5 @@
+pub mod parse;
+
 use std::iter::Peekable;
 
 use crate::tokens::Token;
@@ -182,7 +184,7 @@ pub enum Statement {
     Return(Option<Expression>),
     Expr(Expression),
     Declare(String, Typ),
-    Define(String, Expression)
+    Define(String, Expression),
 }
 
 impl Parse for Statement {
@@ -245,21 +247,22 @@ impl Parse for Statement {
                 Ok(Self::If(expr, block, else_block))
             }
 
-            Some(Token("crewmate")) => { // crewmate red: int
+            Some(Token("crewmate")) => {
+                // crewmate red: int
                 tokens
-                .next()
-                .ok_or_else(|| "Error, unexpected EOF".to_string())?; // crewamte
+                    .next()
+                    .ok_or_else(|| "Error, unexpected EOF".to_string())?; // crewamte
 
                 let name = tokens
-                .next()
-                .ok_or_else(|| "Error, unexpected EOF".to_string())?; //red
+                    .next()
+                    .ok_or_else(|| "Error, unexpected EOF".to_string())?; //red
 
                 assert_eq!(tokens.next(), Some(Token(":")));
 
                 let typ = tokens
-                .next()
-                .ok_or_else(|| "Error, unexpected EOF".to_string())
-                .and_then(Typ::parse_tok)?; // int
+                    .next()
+                    .ok_or_else(|| "Error, unexpected EOF".to_string())
+                    .and_then(Typ::parse_tok)?; // int
 
                 //assert_eq!(tokens.next(), Some(Token("ඞ")));
                 //assert!(matches!(tokens.next(), Some(Token("\n")) | None));
@@ -267,14 +270,15 @@ impl Parse for Statement {
                 Ok(Self::Declare(name.0.to_string(), typ))
             }
 
-            Some(Token("make")) => { // make red 5
+            Some(Token("make")) => {
+                // make red 5
                 tokens
-                .next()
-                .ok_or_else(|| "Error, unexpected EOF".to_string())?; // make
+                    .next()
+                    .ok_or_else(|| "Error, unexpected EOF".to_string())?; // make
 
                 let name = tokens
-                .next()
-                .ok_or_else(|| "Error, unexpected EOF".to_string())?; // red
+                    .next()
+                    .ok_or_else(|| "Error, unexpected EOF".to_string())?; // red
 
                 let expr = Expression::parse(tokens)?;
 
@@ -390,7 +394,6 @@ impl Parse for Ast {
                 tokens.next().ok_or_else(|| "Error, unexpected EOF".to_string())?; //make
                 //OK(Self::Define("not yet", ()));
             }*/
-
             Some(x) => Err(format!("Error, unexpected token {:?}", x)),
             None => Err("Error, unexpected EOF".to_string()),
         }
