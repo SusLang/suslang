@@ -1,7 +1,7 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{alpha1, alphanumeric1},
+    character::complete::{alpha1, alphanumeric1, char},
     combinator::{map, recognize},
     error::ParseError,
     multi::many0_count,
@@ -30,8 +30,8 @@ where
 {
     map(
         recognize(pair(
-            alt((alpha1, tag("_"))),
-            many0_count(alt((alphanumeric1, tag("_")))),
+            alt((alpha1, recognize(char('_')))),
+            many0_count(alt((alphanumeric1, recognize(char('_'))))),
         )),
         |span: Span| span.map(|()| Identifier(span.fragment())),
     )

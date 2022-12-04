@@ -21,5 +21,5 @@ fn main() {
     codegen_file("tmp.py", &mut codegen::Py::new(), ast.as_slice());
 
     let file = dbg!(load_file_str(&"test.sus", "1hola HO"));
-    dbg!(identifier::<ParseError<_>>(file));
+    println!("{}", identifier::<ParseError<_>>(file).unwrap_err());
 }
