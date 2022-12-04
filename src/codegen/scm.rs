@@ -164,8 +164,11 @@ impl<W> Codegen<W, Expression> for Scm where W: Write {
                 match op {
                     Operator::Add => write_eval("+", &[b1.as_ref(), b2.as_ref()], buf)?,
                     Operator::Sub => write_eval("-", &[b1.as_ref(), b2.as_ref()], buf)?,
+                    Operator::Mod => write_eval("modulo", &[b1.as_ref(), b2.as_ref()], buf)?,
                     Operator::Lt => write_eval("<", &[b1.as_ref(), b2.as_ref()], buf)?,
-
+                    Operator::GEt => write_eval(">=", &[b1.as_ref(), b2.as_ref()], buf)?,
+                    Operator::Eq => write_eval("=", &[b1.as_ref(), b2.as_ref()], buf)?,
+                    
                     #[allow(unreachable_patterns)]
                     x => todo!("{:?}", x)
                 }

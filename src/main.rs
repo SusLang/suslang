@@ -2,7 +2,7 @@ use suslang::{codegen_file, codegen};
 
 fn main() {
     println!("Hello, world!");
-    let helloworld = include_str!("../examples/bools.sus");
+    let helloworld = include_str!("../examples/day1.sus");
 
 
     let ast = suslang::parse_str(helloworld);

@@ -44,9 +44,27 @@ impl<W> Codegen<W, [Ast]> for Py where W: Write {
         writeln!(
 			buf,
 			r#"# Python code generated from suslang
+import sys
+
 def report(s, *args):
 	# print(repr(s), args)
 	print((s if s is str else str(s)) % args, end="")
+def getelement(arr, index):
+	return arr[index]
+def setelement(arr, index, value):
+	arr[index] = value
+# string library, will move elsewhere later
+def length(s):
+	return len(s)
+def replace(s, old, new):
+	return s.replace(old, new)
+def split(s, sep):
+	return s.split(sep)
+def openfile(file):
+	f = open(file)
+	l = f.readlines()
+	f.close()
+	return l
 "#
 		)?;
 		for ast in s {
@@ -54,7 +72,8 @@ def report(s, *args):
 		}
 		writeln!(buf, r#"
 if __name__ == "__main__":
-    ඬ()"#)?;
+	sys.setrecursionlimit(1000000000)
+	ඬ()"#)?;
 		Ok(())
     }
 }
@@ -156,12 +175,31 @@ impl<W> Codegen<W, Expression> for Py where W: Write {
                 write!(buf, " - ")?;
                 self.gen(rhs.as_ref(), buf)?;
             }
+			Expression::Operation(Operator::Mod, lhs, rhs) => {
+				// write!(buf, "{}", "\t".repeat(get_tabs()))?;
+				self.gen(lhs.as_ref(), buf)?;
+				write!(buf, " % ")?;
+				self.gen(rhs.as_ref(), buf)?;
+			}
+		
             Expression::Operation(Operator::Lt, lhs, rhs) => {
 				// write!(buf, "{}", "\t".repeat(get_tabs()))?;
                 self.gen(lhs.as_ref(), buf)?;
                 write!(buf, " < ")?;
                 self.gen(rhs.as_ref(), buf)?;
             }
+			Expression::Operation(Operator::GEt, lhs, rhs) => {
+				// write!(buf, "{}", "\t".repeat(get_tabs()))?;
+				self.gen(lhs.as_ref(), buf)?;
+				write!(buf, " >= ")?;
+				self.gen(rhs.as_ref(), buf)?;
+			}
+			Expression::Operation(Operator::Eq, lhs, rhs) => {
+				// write!(buf, "{}", "\t".repeat(get_tabs()))?;
+				self.gen(lhs.as_ref(), buf)?;
+				write!(buf, " == ")?;
+				self.gen(rhs.as_ref(), buf)?;
+			}
             Expression::StringLit(s) => write!(buf, "\"{}\"", s)?,
             Expression::NumLit(n) => write!(buf, "{}", n)?,
             Expression::BoolLit(b) => write!(buf, "{}", if *b {"True"} else {"False"})?,
