@@ -1,0 +1,69 @@
+task letter_to_int with crewmate yellow: string ➤ number
+චsus? == yellow "A"
+චචeject 1ඞ
+චsus? == yellow "X"
+චචeject 1ඞ
+චsus? == yellow "B"
+චචeject 2ඞ
+චsus? == yellow "Y"
+චචeject 2ඞ
+චsus? == yellow "C"
+චචeject 3ඞ
+චsus? == yellow "Z"
+චචeject 3ඞ
+
+
+
+task points with crewmate yellow: number crewmate red: number ➤ number
+චcrewmate green: numberඞ
+චmake green 0ඞ
+චsus? == yellow red
+චචeject + 3 redඞ
+චcrewmate purple: numberඞ
+චmake purple - red yellowඞ
+චcrewmate blue: numberඞ
+චmake blue % purple 3ඞ
+චsus? == blue 1
+චචmake green 6ඞ
+චeject + green redඞ
+
+
+
+
+task loop with crewmate red: string crewmate green: number crewmate blue: number ➤ number
+චcrewmate yellow: numberඞ
+චmake yellow - green 1ඞ
+චsus? >= yellow 0
+චචcrewmate purple: stringඞ
+චචmake purple complete getelement with red and yellowඞ
+චචcrewmate orange: stringඞ
+චචmake orange complete replace with purple and "\n" and ""ඞ
+චචcrewmate brown: stringඞ
+චචmake brown complete split with orange and " "ඞ
+චචcrewmate white: stringඞ
+චචmake white complete getelement with brown and 0ඞ
+චචcrewmate black: stringඞ
+චචmake black complete getelement with brown and 1ඞ
+චචcrewmate pink: numberඞ
+චචcrewmate magenta: numberඞ
+චචmake magenta complete letter_to_int with whiteඞ
+චචcrewmate cyan: numberඞ
+චචmake cyan complete letter_to_int with blackඞ
+චචmake pink + blue complete points with magenta and cyanඞ
+චචeject complete loop with red and yellow and pinkඞ
+චeject blueඞ
+
+
+
+
+
+task ඬ with ➤ number
+චcrewmate red: numberඞ
+චmake red 0ඞ
+චcrewmate green: stringඞ
+චmake green complete openfile with "input"ඞ
+චcrewmate blue: numberඞ
+චmake blue complete len with greenඞ
+චmake red complete loop with green and blue and 0ඞ
+චcomplete report with "%d"and redඞ
+චeject 0ඞ

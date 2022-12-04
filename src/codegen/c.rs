@@ -138,6 +138,16 @@ impl<W> Codegen<W, Expression> for C where W: Write {
 				write!(buf, " < ")?;
 				self.gen(rhs.as_ref(), buf)?;
 			}
+			Expression::Operation(Operator::GEt, lhs, rhs) => {
+				self.gen(lhs.as_ref(), buf)?;
+				write!(buf, " >= ")?;
+				self.gen(rhs.as_ref(), buf)?;
+			}
+			Expression::Operation(Operator::Eq, lhs, rhs) => {
+				self.gen(lhs.as_ref(), buf)?;
+				write!(buf, " == ")?;
+				self.gen(rhs.as_ref(), buf)?;
+			}
 			Expression::Operation(Operator::Add, lhs, rhs) => {
 				self.gen(lhs.as_ref(), buf)?;
 				write!(buf, " + ")?;
@@ -146,6 +156,11 @@ impl<W> Codegen<W, Expression> for C where W: Write {
 			Expression::Operation(Operator::Sub, lhs, rhs) => {
 				self.gen(lhs.as_ref(), buf)?;
 				write!(buf, " - ")?;
+				self.gen(rhs.as_ref(), buf)?;
+			}
+			Expression::Operation(Operator::Mod, lhs, rhs) => {
+				self.gen(lhs.as_ref(), buf)?;
+				write!(buf, " % ")?;
 				self.gen(rhs.as_ref(), buf)?;
 			}
 			Expression::Variable(x) => write!(buf, "{}", x)?,

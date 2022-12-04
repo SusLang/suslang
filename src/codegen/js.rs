@@ -112,9 +112,24 @@ impl<W: Write> Codegen<W, Expression> for Js {
                 write!(buf, " - ")?;
                 self.gen(rhs.as_ref(), buf)?;
             }
+            Expression::Operation(Operator::Mod, lhs, rhs) => {
+                self.gen(lhs.as_ref(), buf)?;
+                write!(buf, " % ")?;
+                self.gen(rhs.as_ref(), buf)?;
+            }
             Expression::Operation(Operator::Lt, lhs, rhs) => {
                 self.gen(lhs.as_ref(), buf)?;
                 write!(buf, " < ")?;
+                self.gen(rhs.as_ref(), buf)?;
+            }
+            Expression::Operation(Operator::GEt, lhs, rhs) => {
+                self.gen(lhs.as_ref(), buf)?;
+                write!(buf, " >= ")?;
+                self.gen(rhs.as_ref(), buf)?;
+            }
+            Expression::Operation(Operator::Eq, lhs, rhs) => {
+                self.gen(lhs.as_ref(), buf)?;
+                write!(buf, " == ")?;
                 self.gen(rhs.as_ref(), buf)?;
             }
             Expression::StringLit(s) => write!(buf, "\"{}\"", s)?,

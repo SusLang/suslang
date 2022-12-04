@@ -146,6 +146,98 @@ where
 
             Type::Void
         }
+
+        Expression::Call(name, args) if name == "len" => {
+            if args.len() != 1 {
+                panic!("On function {f_name}: Expected 1 argument for len, found {}", args.len());
+            }
+            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            if t != Type::String {
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            Type::Number
+        }
+
+        Expression::Call(name, args) if name == "getelement" => {
+            if args.len() != 2 {
+                panic!("On function {f_name}: Expected 2 arguments for getelement, found {}", args.len());
+            }
+            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            if t != Type::String { // for now only strings
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            let t = typecheck_expr(scope, f_name, args.last().unwrap());
+            if t != Type::Number {
+                panic!("On function {f_name}: Expected Number, found {t:?}");
+            }
+            Type::String
+        }
+
+        Expression::Call(name, args) if name == "setelelment" => {
+            if args.len() != 3 {
+                panic!("On function {f_name}: Expected 3 arguments for setelement, found {}", args.len());
+            }
+            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            if t != Type::String { // for now only strings
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            let t = typecheck_expr(scope, f_name, args.get(1).unwrap());
+            if t != Type::Number {
+                panic!("On function {f_name}: Expected Number, found {t:?}");
+            }
+            let t = typecheck_expr(scope, f_name, args.last().unwrap());
+            if t != Type::String {
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            Type::String // for now only strings
+        }
+        //TODO: move this to string library, doing this here is a hack
+        Expression::Call(name, args) if name == "replace" => {
+            if args.len() != 3 {
+                panic!("On function {f_name}: Expected 3 arguments for replace, found {}", args.len());
+            }
+            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            if t != Type::String {
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            let t = typecheck_expr(scope, f_name, args.get(1).unwrap());
+            if t != Type::String {
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            let t = typecheck_expr(scope, f_name, args.last().unwrap());
+            if t != Type::String {
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            Type::String
+        }
+
+        Expression::Call(name, args) if name == "split" => {
+            if args.len() != 2 {
+                panic!("On function {f_name}: Expected 2 arguments for split, found {}", args.len());
+            }
+            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            if t != Type::String {
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            let t = typecheck_expr(scope, f_name, args.last().unwrap());
+            if t != Type::String {
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            Type::String // technically it's a list of strings, but we don't have that yet
+        }
+
+        Expression::Call(name, args) if name == "openfile" => {
+            if args.len() != 1 {
+                panic!("On function {f_name}: Expected 1 argument for openfile, found {}", args.len());
+            }
+            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            if t != Type::String {
+                panic!("On function {f_name}: Expected String, found {t:?}");
+            }
+            Type::String // technically it's a list of strings, but we don't have that yet
+        }
+        //end of string library
+
         Expression::Call(name, args) => {
             match scope.get(name).cloned() {
                 Some(Type::Function(args_t, ret)) => {
@@ -173,6 +265,7 @@ where
                     *ret
                 }
                 Some(_) => panic!("{name} is not callable"),
+                //None => Type::Void,
                 None => panic!("On function {f_name}: function {name} is not defined"),
             }
         }
@@ -209,6 +302,38 @@ where
 
             if b_type != Type::Number {
                 panic!("On function {f_name}: RHS of - is not a number, it is a {a_type:?}");
+            }
+            Type::Number
+        }
+        Expression::Operation(Operator::Eq, a, b) => {
+            let a_type = typecheck_expr(scope, f_name, a.as_ref());
+            let b_type = typecheck_expr(scope, f_name, b.as_ref());
+            if a_type != b_type {
+                panic!("On function {f_name}: LHS of == is not the same type as RHS, it is a {a_type:?} and {b_type:?}");
+            }
+            Type::Bool
+        }
+        Expression::Operation(Operator::GEt, a, b) => {
+            let a_type = typecheck_expr(scope, f_name, a.as_ref());
+            let b_type = typecheck_expr(scope, f_name, b.as_ref());
+            if a_type != Type::Number {
+                panic!("On function {f_name}: LHS of >= is not a number, it is a {a_type:?}");
+            }
+
+            if b_type != Type::Number {
+                panic!("On function {f_name}: RHS of >= is not a number, it is a {a_type:?}");
+            }
+            Type::Bool
+        }
+        Expression::Operation(Operator::Mod, a, b) => {
+            let a_type = typecheck_expr(scope, f_name, a.as_ref());
+            let b_type = typecheck_expr(scope, f_name, b.as_ref());
+            if a_type != Type::Number {
+                panic!("On function {f_name}: LHS of % is not a number, it is a {a_type:?}");
+            }
+
+            if b_type != Type::Number {
+                panic!("On function {f_name}: RHS of % is not a number, it is a {a_type:?}");
             }
             Type::Number
         }

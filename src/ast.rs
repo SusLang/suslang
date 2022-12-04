@@ -66,14 +66,16 @@ impl Typ {
 pub enum Operator {
     Add,
     Sub,
+    Mod,
     // Div,
     // Mul,
     // Mod,
     // Gt,
+    GEt,
     // Get,
     Lt,
     // Let,
-    // Eq,
+     Eq,
     // Not,
     // NotEq
 }
@@ -137,6 +139,22 @@ impl Parse for Expression {
 
                 Ok(Self::Operation(Operator::Lt, Box::new(lhs), Box::new(rhs)))
             }
+            Some(Token(">=")) => {
+                tokens.next();
+
+                let lhs = Self::parse(tokens)?;
+                let rhs = Self::parse(tokens)?;
+
+                Ok(Self::Operation(Operator::GEt, Box::new(lhs), Box::new(rhs)))
+            }
+            Some(Token("==")) => {
+                tokens.next();
+
+                let lhs = Self::parse(tokens)?;
+                let rhs = Self::parse(tokens)?;
+
+                Ok(Self::Operation(Operator::Eq, Box::new(lhs), Box::new(rhs)))
+            }
             // TODO the rest of the logical ops
             Some(Token("+")) => {
                 tokens.next();
@@ -153,6 +171,14 @@ impl Parse for Expression {
                 let rhs = Self::parse(tokens)?;
 
                 Ok(Self::Operation(Operator::Sub, Box::new(lhs), Box::new(rhs)))
+            }
+            Some(Token("%")) => {
+                tokens.next();
+
+                let lhs = Self::parse(tokens)?;
+                let rhs = Self::parse(tokens)?;
+
+                Ok(Self::Operation(Operator::Mod, Box::new(lhs), Box::new(rhs)))
             }
             // TODO the rest of the arithmetic ops
             Some(x) if x.0.chars().all(|n| n.is_digit(10)) => {
@@ -216,7 +242,7 @@ impl Parse for Statement {
                 let mut block = Block::new();
                 while code_block.peek().is_some() {
                     let statement = Self::parse(&mut code_block)?;
-                    assert_eq!(code_block.next(), Some(Token("ඞ")));
+                    assert_eq!(code_block.next(), Some(Token("ඞ"))); //TODO: this line gives error when ther is and if inside an if (No EOL after if)
                     assert!(matches!(code_block.next(), Some(Token("\n")) | None));
                     block.push(statement);
                 }
@@ -236,6 +262,7 @@ impl Parse for Statement {
                     let mut block = Block::new();
                     while code_block.peek().is_some() {
                         let statement = Self::parse(&mut code_block)?;
+                        // assert if the next token is a newline or an sus?
                         assert_eq!(code_block.next(), Some(Token("ඞ")));
                         assert!(matches!(code_block.next(), Some(Token("\n")) | None));
                         block.push(statement);
