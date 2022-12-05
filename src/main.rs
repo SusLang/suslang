@@ -1,5 +1,5 @@
 use suslang::{
-    ast::parse::{error::ParseError, parse_expr, spans::load_file_str},
+    ast::parse::{error::ParseError, expression::parse_expr, spans::load_file_str},
     codegen, codegen_file,
 };
 
