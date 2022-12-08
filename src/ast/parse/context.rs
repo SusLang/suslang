@@ -11,4 +11,7 @@ pub enum Context {
     DecNum,
     Call,
     BinaryOperation,
+    Eject,
+    Statement,
+    Block,
 }

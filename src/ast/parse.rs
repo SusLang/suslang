@@ -26,6 +26,7 @@ pub mod statement;
 mod inline_comment;
 mod num;
 mod operator;
+mod opt;
 mod string;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
