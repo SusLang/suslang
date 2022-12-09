@@ -20,6 +20,7 @@ use super::{Expression, Operator};
 pub mod context;
 pub mod error;
 pub mod expression;
+pub mod items;
 pub mod spans;
 pub mod statement;
 
@@ -33,7 +34,7 @@ mod typ;
 pub struct Identifier<'a>(pub &'a str);
 
 pub fn valid_alpha(c: char) -> bool {
-    c != 'ඞ' && c.is_alphabetic()
+    c != 'ඞ' && c != 'ච' && c.is_alphabetic()
 }
 
 pub fn identifier<'a, E>(input: Span<'a>) -> IResult<'a, E, Identifier>

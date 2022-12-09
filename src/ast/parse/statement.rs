@@ -2,7 +2,6 @@ use std::num::ParseIntError;
 
 use nom::{
     branch::alt,
-    bytes::complete::tag,
     character::complete::{char, line_ending},
     combinator::{map, opt},
     error::{FromExternalError, ParseError},
@@ -10,7 +9,11 @@ use nom::{
     sequence::{pair, preceded, separated_pair, terminated, tuple},
     Parser,
 };
-use nom_supreme::{context::ContextError, ParserExt};
+use nom_supreme::{
+    context::ContextError,
+    tag::{complete::tag, TagError},
+    ParserExt,
+};
 
 use crate::ast::Statement;
 
@@ -30,6 +33,7 @@ where
     E: ParseError<Span<'a>>
         + ContextError<Span<'a>, Context>
         + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
         + 'a,
 {
     spanned(preceded(
@@ -68,6 +72,7 @@ where
     E: ParseError<Span<'a>>
         + ContextError<Span<'a>, Context>
         + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
         + 'a,
 {
     move |i: Span| {
@@ -91,6 +96,7 @@ where
     E: ParseError<Span<'a>>
         + ContextError<Span<'a>, Context>
         + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
         + 'a,
 {
     move |i: Span<'a>| {

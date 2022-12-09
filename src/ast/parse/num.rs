@@ -2,7 +2,6 @@ use std::num::ParseIntError;
 
 use nom::{
     branch::alt,
-    bytes::complete::tag,
     character::complete::{char, one_of},
     combinator::{map_res, recognize},
     error::{FromExternalError, ParseError},
@@ -10,7 +9,11 @@ use nom::{
     sequence::{preceded, terminated},
     Parser,
 };
-use nom_supreme::{context::ContextError, ParserExt};
+use nom_supreme::{
+    context::ContextError,
+    tag::{complete::tag_no_case, TagError},
+    ParserExt,
+};
 
 use super::{
     context::Context,
@@ -22,11 +25,12 @@ fn hexadecimal_value<'a, E>(input: Span<'a>) -> IResult<'a, E, i32>
 where
     E: ParseError<Span<'a>>
         + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
         + ContextError<Span<'a>, Context>,
 {
     map_res(
         preceded(
-            alt((tag("0x"), tag("0X"))),
+            tag_no_case("0x"),
             recognize(many1(terminated(
                 one_of("0123456789abcdefABCDEF"),
                 many0(char('_')),
@@ -43,11 +47,12 @@ fn octal_value<'a, E>(input: Span<'a>) -> IResult<'a, E, i32>
 where
     E: ParseError<Span<'a>>
         + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
         + ContextError<Span<'a>, Context>,
 {
     map_res(
         preceded(
-            alt((tag("0o"), tag("0O"))),
+            tag_no_case("0o"),
             recognize(many1(terminated(one_of("01234567"), many0(char('_')))))
                 .context(Context::OctNum),
         ),
@@ -61,11 +66,12 @@ fn binary_value<'a, E>(input: Span<'a>) -> IResult<'a, E, i32>
 where
     E: ParseError<Span<'a>>
         + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
         + ContextError<Span<'a>, Context>,
 {
     map_res(
         preceded(
-            alt((tag("0b"), tag("0B"))),
+            tag_no_case("0b"),
             recognize(many1(terminated(one_of("01"), many0(char('_'))))).context(Context::BinNum),
         ),
         |out: Span| {
@@ -95,6 +101,7 @@ pub fn num_lit<'a, E>(input: Span<'a>) -> IResult<'a, E, i32>
 where
     E: ParseError<Span<'a>>
         + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
         + ContextError<Span<'a>, Context>,
 {
     alt((hexadecimal_value, octal_value, binary_value, decimal_value))

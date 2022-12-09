@@ -2,7 +2,6 @@ use std::num::ParseIntError;
 
 use nom::{
     branch::alt,
-    bytes::complete::tag,
     character::complete::char,
     combinator::{map, opt},
     error::{FromExternalError, ParseError},
@@ -10,7 +9,11 @@ use nom::{
     sequence::{delimited, pair, preceded, tuple},
     Parser,
 };
-use nom_supreme::{context::ContextError, ParserExt};
+use nom_supreme::{
+    context::ContextError,
+    tag::{complete::tag, TagError},
+    ParserExt,
+};
 
 use super::{
     context::Context,
@@ -28,7 +31,7 @@ use super::{Expression, Operator};
 
 pub fn parse_bool_lit<'a, E>(i: Span<'a>) -> IResult<E, bool>
 where
-    E: ParseError<Span<'a>> + ContextError<Span<'a>, Context>,
+    E: ParseError<Span<'a>> + ContextError<Span<'a>, Context> + TagError<Span<'a>, &'static str>,
 {
     alt((
         map(tag("sus"), |span: Span| span.map(|_| true)),
@@ -51,6 +54,7 @@ fn parse_parens<'a, E>(i: Span<'a>) -> IResult<'a, E, Expression>
 where
     E: ParseError<Span<'a>>
         + ContextError<Span<'a>, Context>
+        + TagError<Span<'a>, &'static str>
         + FromExternalError<Span<'a>, ParseIntError>,
 {
     delimited(char('('), ws(parse_expr), char(')')).parse(i)
@@ -62,6 +66,7 @@ fn parse_call<'a, E>(
 where
     E: ParseError<Span<'a>>
         + ContextError<Span<'a>, Context>
+        + TagError<Span<'a>, &'static str>
         + FromExternalError<Span<'a>, ParseIntError>,
 {
     preceded(
@@ -96,6 +101,7 @@ fn parse_binary_operation<'a, E>(
 where
     E: ParseError<Span<'a>>
         + ContextError<Span<'a>, Context>
+        + TagError<Span<'a>, &'static str>
         + FromExternalError<Span<'a>, ParseIntError>,
 {
     spanned(tuple((ws(binary_operator), ws(parse_expr), ws(parse_expr))))
@@ -107,6 +113,7 @@ pub fn parse_expr<'a, E>(i: Span<'a>) -> IResult<E, Expression>
 where
     E: ParseError<Span<'a>>
         + ContextError<Span<'a>, Context>
+        + TagError<Span<'a>, &'static str>
         + FromExternalError<Span<'a>, ParseIntError>,
 {
     alt((
