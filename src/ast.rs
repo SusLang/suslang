@@ -183,7 +183,7 @@ impl Parse for Expression {
                 Ok(Self::Operation(Operator::Mod, Box::new(lhs), Box::new(rhs)))
             }
             // TODO the rest of the arithmetic ops
-            Some(x) if x.0.chars().all(|n| n.is_digit(10)) => {
+            Some(x) if x.0.chars().all(|n| n.is_ascii_digit()) => {
                 tokens.next();
                 Ok(Self::NumLit(x.0.parse().map_err(|x| {
                     format!("Error parsing number literal: {}", x)

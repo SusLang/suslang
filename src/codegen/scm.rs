@@ -1,4 +1,4 @@
-use std::{io::Write, vec};
+use std::io::Write;
 
 use crate::ast::{Ast, Expression, Operator, Statement, Typ};
 

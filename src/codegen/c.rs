@@ -178,7 +178,7 @@ where
                 self.gen(rhs.as_ref(), buf)?;
             }
             Expression::Variable(x) => write!(buf, "{}", x)?,
-            Expression::BoolLit(b) => write!(buf, "{}", if *b { 1 } else { 0 })?,
+            Expression::BoolLit(b) => write!(buf, "{}", i32::from(*b))?,
         };
         Ok(())
     }
