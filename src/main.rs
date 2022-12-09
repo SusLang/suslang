@@ -9,13 +9,19 @@ use suslang::{
 };
 
 fn main() {
-    println!("Hello, world!");
+    // println!("Hello, world!");
     let helloworld = include_str!("../examples/day1.sus");
 
     let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
-    println!("{res:#?}");
+    // println!("{res:#?}");
+    let ast = res
+        .unwrap()
+        .1
+        .into_iter()
+        .map(|s| s.extra.data)
+        .collect::<Vec<_>>();
 
-    let ast = suslang::parse_str(helloworld);
+    // let ast = suslang::parse_str(helloworld);
 
     suslang::typecheck(&ast);
 

@@ -132,7 +132,7 @@ impl<W: Write> Codegen<W, Expression> for Js {
                 write!(buf, " == ")?;
                 self.gen(rhs.as_ref(), buf)?;
             }
-            Expression::StringLit(s) => write!(buf, "\"{}\"", s)?,
+            Expression::StringLit(s) => write!(buf, "{:?}", s)?,
             Expression::NumLit(n) => write!(buf, "{}", n)?,
             Expression::BoolLit(b) => write!(buf, "{}", b)?,
             Expression::Variable(n) => write!(buf, "{}", n)?,

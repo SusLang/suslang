@@ -206,7 +206,7 @@ where
             }
 
             Expression::NumLit(s) => write!(buf, "{}", s)?,
-            Expression::StringLit(s) => write!(buf, "\"{}\"", s)?,
+            Expression::StringLit(s) => write!(buf, "{:?}", s)?,
 
             Expression::Variable(v) => write!(buf, " {} ", v)?,
 

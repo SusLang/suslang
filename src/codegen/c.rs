@@ -146,7 +146,7 @@ where
                 write!(buf, ")")?;
             }
             Expression::NumLit(s) => write!(buf, "{}", s)?,
-            Expression::StringLit(s) => write!(buf, "\"{}\"", s)?,
+            Expression::StringLit(s) => write!(buf, "{:?}", s)?,
             Expression::Operation(Operator::Lt, lhs, rhs) => {
                 self.gen(lhs.as_ref(), buf)?;
                 write!(buf, " < ")?;
