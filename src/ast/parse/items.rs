@@ -5,7 +5,7 @@ use nom::{
     character::complete::char,
     combinator::{all_consuming, map, success},
     error::{FromExternalError, ParseError},
-    multi::{many0, separated_list0},
+    multi::many0,
     sequence::{preceded, separated_pair, tuple},
     Parser,
 };
@@ -45,8 +45,8 @@ where
             tuple((
                 ws(identifier),
                 ws(tag("with")),
-                separated_list0(
-                    tag("and"),
+                many0(
+                    // tag("and"),
                     preceded(
                         ws(tag("crewmate")),
                         separated_pair(ws(identifier), ws(char(':')), ws(parse_type)),
