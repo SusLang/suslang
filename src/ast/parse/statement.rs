@@ -7,20 +7,22 @@ use nom::{
     combinator::{map, opt},
     error::{FromExternalError, ParseError},
     multi::{many0, many_m_n},
-    sequence::{pair, preceded, terminated, tuple},
+    sequence::{pair, preceded, separated_pair, terminated, tuple},
     Parser,
 };
 use nom_supreme::{context::ContextError, ParserExt};
 
-use crate::ast::{Block, Statement};
+use crate::ast::Statement;
 
 use super::{
     context::Context,
     error::IResult,
     expression::parse_expr,
+    identifier,
     inline_comment::ws,
     // opt::opt,
     spans::{spanned, spanned_map, Span},
+    typ::parse_type,
 };
 
 pub fn parse_if<'a, E>(suslevel: usize) -> impl FnMut(Span<'a>) -> IResult<'a, E, Statement>
@@ -68,7 +70,11 @@ where
         + FromExternalError<Span<'a>, ParseIntError>
         + 'a,
 {
-    spanned(many0(parse_statement(suslevel)))
+    move |i: Span| {
+        spanned(many0(parse_statement(suslevel)))
+            .context(Context::Block)
+            .parse(i)
+    }
 }
 
 pub fn parse_tabs<'a, E>(
@@ -99,6 +105,25 @@ where
                     char('ඞ'),
                 )
                 .context(Context::Eject),
+                terminated(
+                    spanned(map(
+                        preceded(
+                            ws(tag("crewmate")),
+                            separated_pair(ws(identifier), char(':'), ws(parse_type)),
+                        ),
+                        |(name, typ)| Statement::Declare(name.extra.data.0.into(), typ.extra.data),
+                    )),
+                    char('ඞ'),
+                )
+                .context(Context::Declare),
+                terminated(
+                    spanned(map(
+                        preceded(ws(tag("make")), pair(ws(identifier), ws(parse_expr))),
+                        |(name, typ)| Statement::Define(name.extra.data.0.into(), typ.extra.data),
+                    )),
+                    char('ඞ'),
+                )
+                .context(Context::Declare),
                 terminated(spanned_map(parse_expr, Statement::Expr), char('ඞ')),
             ))),
         )
@@ -119,6 +144,8 @@ sus? < 2 5
 චcomplete report with "hey\n"ඞ
 sus? < 2 5
 චcomplete report with "hey\n"ඞ
+crewmate red: numberඞ
+make red 5ඞ
 eject 0ඞ"#;
 
     #[test]
@@ -163,6 +190,8 @@ eject 0ඞ"#;
                     ))],
                     None,
                 ),
+                Statement::Declare("red".into(), crate::ast::Typ::Num),
+                Statement::Define("red".into(), Expression::NumLit(5)),
                 Statement::Return(Some(Expression::NumLit(0))),
             ],
         );
@@ -229,49 +258,46 @@ eject 0ඞ"#;
 
     #[test]
     fn parse_statement_eject() {
-        // const TEST_STATEMENT1: &str = r#"චeject "hey\n"ඞ"#;
-        // let res = super::parse_block::<super::super::error::ParseError<Span>>(1)(load_file_str(
-        //     &"test_statement.sus",
-        //     TEST_STATEMENT1,
-        // ));
-        // dbg!(&res);
-        // assert!(res.is_ok());
-        // assert_eq!(
-        //     res.map(|(a, b)| (
-        //         *a.fragment(),
-        //         b.extra.data.into_iter().map(|s| s.extra.data).collect()
-        //     ))
-        //     .unwrap(),
-        //     (
-        //         "",
-        //         vec![Statement::Return(Some(Expression::StringLit(
-        //             "hey\n".into()
-        //         )))]
-        //     )
-        // );
+        const TEST_STATEMENT1: &str = r#"චeject "hey\n"ඞ"#;
+        let res = super::parse_block::<super::super::error::ParseError<Span>>(1)(load_file_str(
+            &"test_statement.sus",
+            TEST_STATEMENT1,
+        ));
+        dbg!(&res);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.map(|(a, b)| (
+                *a.fragment(),
+                b.extra.data.into_iter().map(|s| s.extra.data).collect()
+            ))
+            .unwrap(),
+            (
+                "",
+                vec![Statement::Return(Some(Expression::StringLit(
+                    "hey\n".into()
+                )))]
+            )
+        );
 
-        const TEST_STATEMENT2: &str = r#"eject ඞ"#;
+        const TEST_STATEMENT2: &str = r#"ejectඞ"#;
         let res = super::parse_statement::<super::super::error::ParseError<Span>>(0)(
             load_file_str(&"test_statement.sus", TEST_STATEMENT2),
         );
-        dbg!(terminated(
-            spanned(map(
-                preceded(
-                    ws(tag("eject")),
-                    opt(ws(super::parse_expr::<super::super::error::ParseError<_>>))
-                ),
-                |x| { Statement::Return(x.map(|s| s.extra.data)) }
-            )),
-            char('ඞ'),
-        )(load_file_str(
-            &"test_statement.sus",
-            TEST_STATEMENT2
-        )));
+        // dbg!(terminated(
+        //     spanned::<super::super::error::ParseError<Span>, _, _>(map(
+        //         preceded(ws(tag("eject")), opt(ws(super::parse_expr))),
+        //         |x| { Statement::Return(x.map(|s| s.extra.data)) }
+        //     )),
+        //     success(()) // char('ඞ'),
+        // )(load_file_str(
+        //     &"test_statement.sus",
+        //     TEST_STATEMENT2
+        // )));
         dbg!(&res);
         assert!(res.is_ok());
         assert_eq!(
             res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
-            ("", Statement::Return(Some(Expression::NumLit(0))))
+            ("", Statement::Return(None))
         )
     }
 }

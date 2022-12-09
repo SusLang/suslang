@@ -14,4 +14,7 @@ pub enum Context {
     Eject,
     Statement,
     Block,
+    Define,
+    Declare,
+    Type,
 }

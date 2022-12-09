@@ -26,11 +26,15 @@ pub mod statement;
 mod inline_comment;
 mod num;
 mod operator;
-mod opt;
 mod string;
+mod typ;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Identifier<'a>(pub &'a str);
+
+pub fn valid_alpha(c: char) -> bool {
+    c != 'ඞ' && c.is_alphabetic()
+}
 
 pub fn identifier<'a, E>(input: Span<'a>) -> IResult<'a, E, Identifier>
 where
@@ -38,12 +42,9 @@ where
 {
     map(
         recognize(pair(
-            alt((
-                recognize(satisfy(char::is_alphabetic)),
-                recognize(char('_')),
-            )),
+            alt((recognize(satisfy(valid_alpha)), recognize(char('_')))),
             many0_count(alt((
-                recognize(satisfy(char::is_alphabetic)),
+                recognize(satisfy(valid_alpha)),
                 digit1,
                 recognize(char('_')),
             ))),
