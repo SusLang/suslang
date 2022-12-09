@@ -14,7 +14,7 @@ task letter_to_int with crewmate yellow: string ➤ number
 
 
 
-task points with crewmate yellow: number crewmate red: number ➤ number
+task points with crewmate yellow: number and crewmate red: number ➤ number
 චcrewmate green: numberඞ
 චmake green 0ඞ
 චsus? == yellow red
@@ -30,7 +30,7 @@ task points with crewmate yellow: number crewmate red: number ➤ number
 
 
 
-task loop with crewmate red: string crewmate green: number crewmate blue: number ➤ number
+task loop with crewmate red: string and crewmate green: number and crewmate blue: number ➤ number
 චcrewmate yellow: numberඞ
 චmake yellow - green 1ඞ
 චsus? >= yellow 0

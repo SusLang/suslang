@@ -1,4 +1,4 @@
-task add with crewmate red: number crewmate black: number ➤ number
+task add with crewmate red: number and crewmate black: number ➤ number
 චeject + red blackඞ
 
 
