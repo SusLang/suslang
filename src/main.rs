@@ -12,8 +12,8 @@ fn main() {
     println!("Hello, world!");
     let helloworld = include_str!("../examples/day1.sus");
 
-    // let res = parse_items::<ParseError<Span>>(load_file_str(&"../examples/day1.sus", helloworld));
-    // dbg!(res);
+    let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
+    println!("{res:#?}");
 
     let ast = suslang::parse_str(helloworld);
 

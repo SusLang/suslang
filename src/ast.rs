@@ -22,6 +22,8 @@ fn read_block<'a, I: Iterator<Item = Token<'a>>>(tokens: &mut Peekable<I>) -> Ve
     code_block
 }
 
+// TODO ADD SPANS FOR AST
+
 pub trait Parse: Sized {
     fn parse<'a, I: Iterator<Item = Token<'a>>>(tokens: &mut Peekable<I>) -> Result<Self, String>;
 }

@@ -73,7 +73,7 @@ where
     .parse(i)
 }
 
-pub fn parse_items<'a, E>(i: Span<'a>) -> IResult<'a, E, Vec<Span<'a, Ast>>>
+pub fn parse_items<'a, E>(i: Span<'a>) -> nom::IResult<Span<'a>, Vec<Span<'a, Ast>>, E>
 where
     E: ParseError<Span<'a>>
         + ContextError<Span<'a>, Context>
@@ -81,7 +81,7 @@ where
         + TagError<Span<'a>, &'static str>
         + 'a,
 {
-    all_consuming(spanned(many0(parse_ast_item))).parse(i)
+    all_consuming(many0(parse_ast_item)).parse(i)
 }
 #[cfg(test)]
 mod tests {

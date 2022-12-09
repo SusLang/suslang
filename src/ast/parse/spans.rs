@@ -8,6 +8,7 @@ use super::error::IResult;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExtraData<'a, T> {
     pub filename: &'a Path,
+    pub file_contents: &'a str,
     pub data: T,
 }
 
@@ -27,6 +28,7 @@ impl<'a, D> MapExt for ExtraData<'a, D> {
         Self::Output {
             data: f(self.data),
             filename: self.filename,
+            file_contents: self.file_contents,
         }
     }
 }
@@ -54,6 +56,7 @@ pub fn load_file_str<'a, P: AsRef<Path>>(path: &'a P, contents: &'a str) -> Span
         contents,
         ExtraData {
             filename: path.as_ref(),
+            file_contents: contents,
             data: (),
         },
     )
