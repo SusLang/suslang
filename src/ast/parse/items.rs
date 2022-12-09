@@ -3,9 +3,9 @@ use std::num::ParseIntError;
 use nom::{
     branch::alt,
     character::complete::char,
-    combinator::{map, success},
+    combinator::{all_consuming, map, success},
     error::{FromExternalError, ParseError},
-    multi::separated_list0,
+    multi::{many0, separated_list0},
     sequence::{preceded, separated_pair, tuple},
     Parser,
 };
@@ -47,7 +47,10 @@ where
                 ws(tag("with")),
                 separated_list0(
                     tag("and"),
-                    separated_pair(ws(identifier), ws(char(':')), ws(parse_type)),
+                    preceded(
+                        ws(tag("crewmate")),
+                        separated_pair(ws(identifier), ws(char(':')), ws(parse_type)),
+                    ),
                 ),
                 alt((
                     ws(preceded(ws(char('➤')), ws(parse_type))),
@@ -70,6 +73,16 @@ where
     .parse(i)
 }
 
+pub fn parse_items<'a, E>(i: Span<'a>) -> IResult<'a, E, Vec<Span<'a, Ast>>>
+where
+    E: ParseError<Span<'a>>
+        + ContextError<Span<'a>, Context>
+        + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
+        + 'a,
+{
+    all_consuming(spanned(many0(parse_ast_item))).parse(i)
+}
 #[cfg(test)]
 mod tests {
     use crate::ast::{
@@ -80,6 +93,8 @@ mod tests {
         },
         Ast, Expression, Statement, Typ,
     };
+
+    use super::parse_items;
 
     #[test]
     fn test_parse_no_return_type() {
@@ -103,5 +118,15 @@ task a with
                 )
             )
         )
+    }
+
+    #[test]
+    fn day1() {
+        let data = load_file_str(&"day1.sus", include_str!("../../../examples/day1.sus"));
+        let res = parse_items::<ParseError<Span>>(data);
+        if let Err(e) = res {
+            println!("{e:#?}");
+            panic!()
+        }
     }
 }
