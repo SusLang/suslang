@@ -116,6 +116,16 @@ where
                 self.gen(expr, buf)?;
                 writeln!(buf, ";")?;
             }
+            Statement::While(cond, body) => {
+                write!(buf, "while (")?;
+                self.gen(cond, buf)?;
+                writeln!(buf, ") {{")?;
+                for s in body {
+                    write!(buf, "\t")?;
+                    self.gen(s, buf)?;
+                }
+                writeln!(buf, "}}")?;
+            }
         }
         Ok(())
     }

@@ -65,6 +65,25 @@ where
     ))
 }
 
+pub fn parse_while<'a, E>(suslevel: usize) -> impl FnMut(Span<'a>) -> IResult<'a, E, Statement>
+where
+    E: ParseError<Span<'a>>
+        + ContextError<Span<'a>, Context>
+        + FromExternalError<Span<'a>, ParseIntError>
+        + TagError<Span<'a>, &'static str>
+        + 'a,
+{
+    spanned(preceded(
+        ws(tag("while")),
+        map(tuple((parse_expr, parse_block(suslevel + 1))), |(e, b)| {
+            Statement::While(
+                e.extra.data,
+                b.extra.data.into_iter().map(|s| s.extra.data).collect(),
+            )
+        }),
+    ))
+}
+
 pub fn parse_block<'a, E>(
     suslevel: usize,
 ) -> impl FnMut(Span<'a>) -> IResult<'a, E, Vec<Span<'a, Statement>>>
@@ -104,6 +123,7 @@ where
             parse_tabs(suslevel),
             ws(alt((
                 parse_if(suslevel),
+                parse_while(suslevel),
                 terminated(
                     spanned(map(preceded(ws(tag("eject")), opt(ws(parse_expr))), |x| {
                         Statement::Return(x.map(|s| s.extra.data))
@@ -129,7 +149,7 @@ where
                     )),
                     char('ඞ'),
                 )
-                .context(Context::Declare),
+                .context(Context::Define),
                 terminated(spanned_map(parse_expr, Statement::Expr), char('ඞ')),
             ))),
         )
@@ -304,6 +324,51 @@ eject 0ඞ"#;
         assert_eq!(
             res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
             ("", Statement::Return(None))
+        )
+    }
+
+    #[test]
+    fn parse_while() {
+        const TEST_WHILE: &str = r#"while < 2 5
+චwhile < 2 5
+චචcomplete report with "hey\n"ඞ
+චcomplete report with "hey\n"ඞ
+"#;
+        let res = super::parse_while::<super::super::error::ParseError<Span>>(0)(load_file_str(
+            &"test_while.sus",
+            TEST_WHILE,
+        ));
+        dbg!(&res);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
+            (
+                "",
+                Statement::While(
+                    Expression::Operation(
+                        Operator::Lt,
+                        Box::new(Expression::NumLit(2)),
+                        Box::new(Expression::NumLit(5))
+                    ),
+                    vec![
+                        Statement::While(
+                            Expression::Operation(
+                                Operator::Lt,
+                                Box::new(Expression::NumLit(2)),
+                                Box::new(Expression::NumLit(5))
+                            ),
+                            vec![Statement::Expr(Expression::Call(
+                                "report".into(),
+                                vec![Expression::StringLit("hey\n".into())]
+                            ))]
+                        ),
+                        Statement::Expr(Expression::Call(
+                            "report".into(),
+                            vec![Expression::StringLit("hey\n".into())]
+                        ))
+                    ]
+                )
+            )
         )
     }
 }

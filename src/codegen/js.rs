@@ -66,6 +66,15 @@ impl<W: Write> Codegen<W, Statement> for Js {
                 }
                 writeln!(buf, "}}")?;
             }
+            Statement::While(cond, block) => {
+                write!(buf, "while (")?;
+                self.gen(cond, buf)?;
+                writeln!(buf, ") {{")?;
+                for s in block {
+                    self.gen(s, buf)?;
+                }
+                writeln!(buf, "}}")?;
+            }
             Statement::Return(e) => {
                 write!(buf, "return ")?;
                 if let Some(e) = e {

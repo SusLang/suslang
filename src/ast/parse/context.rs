@@ -17,4 +17,5 @@ pub enum Context {
     Define,
     Declare,
     Type,
+    While,
 }

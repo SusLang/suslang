@@ -74,6 +74,14 @@ where
                     typecheck_body(scope.push(), f_name, ret, else_body);
                 }
             }
+            Statement::While(cond, body) => {
+                // typecheck condition
+                let e_type = typecheck_expr(&mut scope, f_name, cond);
+                if e_type != Type::Bool {
+                    panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
+                }
+                typecheck_body(scope.push(), f_name, ret, body);
+            }
             Statement::Return(x) => {
                 // Check expression type is the same as ret
                 let e_type = x

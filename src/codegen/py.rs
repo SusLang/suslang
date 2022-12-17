@@ -150,6 +150,17 @@ where
                 self.tab_count -= 1;
                 writeln!(buf)?;
             }
+            Statement::While(cond, b) => {
+                write!(buf, "{}while ", "\t".repeat(self.tab_count))?;
+                self.gen(cond, buf)?;
+                writeln!(buf, ":")?;
+                self.tab_count += 1;
+                for s in b {
+                    self.gen(s, buf)?;
+                }
+                self.tab_count -= 1;
+                writeln!(buf)?;
+            }
             Statement::Declare(name, typ) => writeln!(
                 buf,
                 "{}{} = {}",

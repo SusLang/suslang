@@ -167,6 +167,10 @@ where
                 }
             }
 
+            Statement::While(cond, b) => {
+                write_eval("while", &[cond, &Block(b.as_slice())], buf)?;
+            }
+
             Statement::Declare(name, typ) => write_eval(
                 "define",
                 &[

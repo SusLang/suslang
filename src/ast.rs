@@ -209,6 +209,7 @@ impl Parse for Expression {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Statement {
     If(Expression, Block, Option<Block>),
+    While(Expression, Block),
     Return(Option<Expression>),
     Expr(Expression),
     Declare(String, Typ),
