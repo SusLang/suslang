@@ -14,6 +14,7 @@ use crate::{
 
 pub mod ast;
 pub mod codegen;
+pub mod module;
 mod scope;
 mod tokens;
 mod typecheck;
