@@ -3,7 +3,7 @@
 use std::fmt::Debug;
 
 use crate::{
-    ast::{Ast, Expression, Operator, Statement, Typ},
+    ast::{parse::spans::Span, Ast, Expression, Operator, Statement, Typ},
     scope::{GlobalScope, Scope},
 };
 
@@ -27,18 +27,20 @@ impl From<Typ> for Type {
     }
 }
 
-pub fn typecheck(a: &[Ast]) {
+pub fn typecheck(a: &[Span<Ast>]) {
     let mut scopes = GlobalScope::new();
     for a in a {
-        match a {
+        match a.extra.data {
             Ast::Func(name, ret, args, _) => scopes.add(
                 name,
-                Type::Function(
-                    args.iter()
-                        .map(|s| Type::from(s.extra.data.1.extra.data))
-                        .collect(),
-                    Box::new(Type::from(ret.extra.data)),
-                ),
+                a.map(|_| {
+                    Type::Function(
+                        args.iter()
+                            .map(|s| Type::from(s.extra.data.1.extra.data))
+                            .collect(),
+                        Box::new(Type::from(ret.extra.data)),
+                    )
+                }),
             ),
         }
     }
