@@ -49,22 +49,22 @@ pub fn typecheck(a: &[Span<Ast>]) {
     }
 
     for a in a {
-        match a {
+        match a.extra.data {
             Ast::Func(name, ret, args, body) => {
                 let ret: Type = ret.extra.data.into();
                 let f_name = name;
                 let mut scope = scopes.push();
                 for arg in args {
-                    scope.add(arg.map(|(name, _)| name), arg.map(|(_, t)| t));
+                    scope.add(arg.extra.data.0, arg.extra.data.1.map(Into::into));
                 }
 
-                typecheck_body(scope, f_name, &ret, body);
+                typecheck_body(scope, &f_name.extra.data, &ret, &body.extra.data);
             }
         }
     }
 }
 
-fn typecheck_body<'a, S>(mut scope: S, f_name: &str, ret: &Type, body: &'a [Statement])
+fn typecheck_body<'a, S>(mut scope: S, f_name: &str, ret: &Type, body: &'a [Span<'a, Statement>])
 where
     S: Scope<Span<'a, Type>, Span<'a, String>>,
 {
