@@ -34,8 +34,10 @@ pub fn typecheck(a: &[Ast]) {
             Ast::Func(name, ret, args, _) => scopes.add(
                 name,
                 Type::Function(
-                    args.iter().map(|(_, t)| Type::from(*t)).collect(),
-                    Box::new(Type::from(*ret)),
+                    args.iter()
+                        .map(|s| Type::from(s.extra.data.1.extra.data))
+                        .collect(),
+                    Box::new(Type::from(ret.extra.data)),
                 ),
             ),
         }
@@ -44,10 +46,10 @@ pub fn typecheck(a: &[Ast]) {
     for a in a {
         match a {
             Ast::Func(name, ret, args, body) => {
-                let ret: Type = (*ret).into();
+                let ret: Type = ret.extra.data.into();
                 let f_name = name;
                 let mut scope = scopes.push();
-                for (name, t) in args {
+                for arg in args {
                     scope.add(name, (*t).into());
                 }
 

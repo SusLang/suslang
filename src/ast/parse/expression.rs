@@ -121,17 +121,10 @@ where
         spanned_map(parse_string_lit, Expression::StringLit),
         spanned_map(num_lit, Expression::NumLit),
         spanned_map(parse_call, |(ident, args)| {
-            Expression::Call(
-                ident.extra.data.0.to_string(),
-                args.into_iter().map(|arg| arg.extra.data).collect(),
-            )
+            Expression::Call(ident.map(|e| e.0.to_string()), args)
         }),
         spanned_map(parse_binary_operation, |(operator, arg1, arg2)| {
-            Expression::Operation(
-                operator.extra.data,
-                Box::new(arg1.extra.data),
-                Box::new(arg2.extra.data),
-            )
+            Expression::Operation(operator, Box::new(arg1), Box::new(arg2))
         }),
         spanned_map(identifier, |ident| {
             Expression::Variable(ident.0.to_string())
