@@ -3,7 +3,10 @@
 use std::fmt::Debug;
 
 use crate::{
-    ast::{parse::spans::Span, Ast, Expression, Operator, Statement, Typ},
+    ast::{
+        parse::spans::{MapExt, Span},
+        Ast, Expression, Operator, Statement, Typ,
+    },
     scope::{GlobalScope, Scope},
 };
 
@@ -52,7 +55,7 @@ pub fn typecheck(a: &[Span<Ast>]) {
                 let f_name = name;
                 let mut scope = scopes.push();
                 for arg in args {
-                    scope.add(name, (*t).into());
+                    scope.add(arg.map(|(name, _)| name), arg.map(|(_, t)| t));
                 }
 
                 typecheck_body(scope, f_name, &ret, body);
@@ -63,7 +66,7 @@ pub fn typecheck(a: &[Span<Ast>]) {
 
 fn typecheck_body<'a, S>(mut scope: S, f_name: &str, ret: &Type, body: &'a [Statement])
 where
-    S: Scope<'a, Type>,
+    S: Scope<Span<'a, Type>, Span<'a, String>>,
 {
     for line in body {
         match line {
@@ -121,7 +124,7 @@ where
 
 fn typecheck_expr<'a, S>(scope: &mut S, f_name: &str, e: &Expression) -> Type
 where
-    S: Scope<'a, Type> + ?Sized,
+    S: Scope<Span<'a, Type>, Span<'a, String>> + ?Sized,
 {
     match e {
         Expression::Call(name, args) if name == "report" => {

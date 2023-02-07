@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug, marker::PhantomData};
+use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData};
 
 pub trait Scope<T, K>: Debug {
     fn add(&mut self, n: K, t: T);
@@ -32,12 +32,13 @@ impl<'a, T, K> Default for GlobalScope<'a, T, K> {
 impl<'a, T, K> Scope<T, K> for GlobalScope<'a, T, K>
 where
     T: Debug,
+    K: Debug + Eq + Hash,
 {
-    fn add(&mut self, n: &'a str, t: T) {
+    fn add(&mut self, n: K, t: T) {
         self.data.insert(n, t);
     }
 
-    fn get(&self, n: &str) -> Option<&T> {
+    fn get(&self, n: &K) -> Option<&T> {
         self.data.get(n)
     }
 
@@ -48,7 +49,7 @@ where
 
 pub struct ChildScope<'b, T, K> {
     parent: &'b mut dyn Scope<T, K>,
-    data: HashMap<&'b str, T>,
+    data: HashMap<K, T>,
 }
 
 impl<'b, T, K> ChildScope<'b, T, K> {
@@ -63,12 +64,13 @@ impl<'b, T, K> ChildScope<'b, T, K> {
 impl<'b, T, K> Scope<T, K> for ChildScope<'b, T, K>
 where
     T: Debug,
+    K: Eq + Hash + Debug,
 {
-    fn add(&mut self, n: &'b str, t: T) {
+    fn add(&mut self, n: K, t: T) {
         self.data.insert(n, t);
     }
 
-    fn get(&self, n: &str) -> Option<&T> {
+    fn get(&self, n: &K) -> Option<&T> {
         self.data.get(n).or_else(|| self.parent.get(n))
     }
 
@@ -80,6 +82,7 @@ where
 impl<'b, T, K> Debug for ChildScope<'b, T, K>
 where
     T: Debug,
+    K: Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ChildScope")
