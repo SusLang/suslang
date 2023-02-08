@@ -1,12 +1,22 @@
 mod c;
-mod js;
-mod py;
-mod scm;
+// mod js;
+// mod py;
+// mod scm;
 
 use std::io::Write;
 
 pub trait Codegen<W: Write, T: ?Sized> {
     fn gen(&mut self, s: &T, buf: &mut W) -> std::io::Result<()>;
+}
+
+impl<'a, W, T, C> Codegen<W, Span<'a, T>> for C
+where
+    W: Write,
+    C: Codegen<W, T>,
+{
+    fn gen(&mut self, s: &Span<'a, T>, buf: &mut W) -> std::io::Result<()> {
+        self.gen(&s.extra.data, buf)
+    }
 }
 
 trait Typename {
@@ -28,8 +38,8 @@ where
 }
 
 pub use c::C;
-pub use js::Js;
-pub use py::Py;
-pub use scm::Scm;
+// pub use js::Js;
+// pub use py::Py;
+// pub use scm::Scm;
 
-use crate::ast::Typ;
+use crate::ast::{parse::spans::Span, Typ};

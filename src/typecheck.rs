@@ -2,9 +2,11 @@
 
 use std::fmt::Debug;
 
+use nom_locate::LocatedSpan;
+
 use crate::{
     ast::{
-        parse::spans::{MapExt, Span},
+        parse::spans::{ExtraData, MapExt, Span},
         Ast, Expression, Operator, Statement, Typ,
     },
     scope::{GlobalScope, Scope},
@@ -35,10 +37,10 @@ pub fn typecheck(a: &[Span<Ast>]) {
         nom_locate::LocatedSpan<&str, crate::ast::parse::spans::ExtraData<Type>>,
     > = GlobalScope::new();
     for a in a {
-        match a.extra.data {
+        match &a.extra.data {
             Ast::Func(name, ret, args, _) => scopes.add(
                 &name.extra.data,
-                a.map(|_| {
+                a.clone().map(|_| {
                     Type::Function(
                         args.iter()
                             .map(|s| Type::from(s.extra.data.1.extra.data))
@@ -51,7 +53,7 @@ pub fn typecheck(a: &[Span<Ast>]) {
     }
 
     for a in a {
-        match a.extra.data {
+        match &a.extra.data {
             Ast::Func(name, ret, args, body) => {
                 let ret = ret.map(Into::into);
                 let f_name = name;
@@ -78,7 +80,7 @@ fn typecheck_body<'a, S>(
     S: Scope<Span<'a, Type>, &'a str>,
 {
     for line in body {
-        match line.extra.data {
+        match &line.extra.data {
             Statement::If(cond, body, else_body) => {
                 // typecheck condition
                 let e_type = typecheck_expr(&mut scope, f_name, &cond);
@@ -131,18 +133,18 @@ fn typecheck_body<'a, S>(
     }
 }
 
-fn typecheck_expr<'a, S>(scope: &mut S, f_name: &str, e: &Span<'a, Expression>) -> Type
+fn typecheck_expr<'a, S>(scope: &mut S, f_name: &str, e: &'a Span<'a, Expression>) -> Type
 where
     S: Scope<Span<'a, Type>, &'a str> + ?Sized,
 {
-    match e.extra.data {
+    match &e.extra.data {
         Expression::Call(name, args) if name.extra.data == "report" => {
             // COMPILER MAGIIIC
             if args.is_empty() {
                 panic!("On function {f_name}: Nothing to report");
             }
             let mut expected_args = Vec::new();
-            for c in match args.first().map(|x| x.extra.data) {
+            for c in match args.first().map(|x| &x.extra.data) {
                 Some(Expression::StringLit(s)) => s,
                 Some(e) => {
                     panic!("On function {f_name}: Expected string literal on report, found {e:?}")
@@ -330,23 +332,51 @@ where
                 None => panic!("On function {f_name}: function {name} is not defined"),
             }
         }
-        Expression::Operation(op, a, b) => {
-            let a_type = typecheck_expr(scope, f_name, a.as_ref());
-            let b_type = typecheck_expr(scope, f_name, b.as_ref());
-            let op_data = op.extra.data;
-            if a_type != Type::Number {
-                panic!(
-                    "On function {f_name}: LHS of {op_data} is not a number, it is a {a_type:?}"
-                );
-            }
+        Expression::Operation(
+            LocatedSpan {
+                extra: ExtraData { data: op, .. },
+                ..
+            },
+            a,
+            b,
+        ) => match op {
+            Operator::Add | Operator::Sub | Operator::Mod => {
+                let a_type = typecheck_expr(scope, f_name, a.as_ref());
+                let b_type = typecheck_expr(scope, f_name, b.as_ref());
+                if a_type != Type::Number {
+                    panic!("On function {f_name}: LHS of {op} is not a number, it is a {a_type:?}");
+                }
 
-            if b_type != Type::Number {
-                panic!(
-                    "On function {f_name}: RHS of {op_data} is not a number, it is a {a_type:?}"
-                );
+                if b_type != Type::Number {
+                    panic!("On function {f_name}: RHS of {op} is not a number, it is a {b_type:?}");
+                }
+                Type::Number
             }
-            Type::Number
-        }
+            Operator::GEt | Operator::Lt => {
+                let a_type = typecheck_expr(scope, f_name, a.as_ref());
+                let b_type = typecheck_expr(scope, f_name, b.as_ref());
+
+                if a_type != Type::Number {
+                    panic!("On function {f_name}: LHS of {op} is not a number, it is a {a_type:?}");
+                }
+
+                if b_type != Type::Number {
+                    panic!("On function {f_name}: RHS of {op} is not a number, it is a {b_type:?}");
+                }
+                Type::Bool
+            }
+            Operator::Eq => {
+                let a_type = typecheck_expr(scope, f_name, a.as_ref());
+                let b_type = typecheck_expr(scope, f_name, b.as_ref());
+
+                if b_type != a_type {
+                    panic!(
+                        "On function {f_name}: RHS of == is not a {a_type:?}, it is a {b_type:?}"
+                    );
+                }
+                Type::Bool
+            }
+        },
         Expression::StringLit(_) => Type::String,
         Expression::NumLit(_) => Type::Number,
         Expression::Variable(name) => {

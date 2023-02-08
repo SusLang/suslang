@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use ast::Ast;
+use ast::{parse::spans::Span, Ast};
 use codegen::Codegen;
 
 use crate::tokens::{tokenize, Token};
@@ -45,9 +45,9 @@ pub use typecheck::typecheck;
 //     Ok(parse_str(&s))
 // }
 
-pub fn codegen_file<'a, C, P>(file: P, cod: &mut C, ast: &[Ast])
+pub fn codegen_file<'a, C, P>(file: P, cod: &mut C, ast: &[Span<'a, Ast<'a>>])
 where
-    C: Codegen<BufWriter<File>, [Ast<'a>]>,
+    C: Codegen<BufWriter<File>, [Span<'a, Ast<'a>>]>,
     P: AsRef<Path>,
 {
     let f = File::create(file).unwrap();
