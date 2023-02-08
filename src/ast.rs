@@ -4,6 +4,8 @@ pub mod parse;
 
 // use crate::tokens::Token;
 
+use std::fmt::Display;
+
 use self::parse::spans::Span;
 
 // fn read_block<'a, I: Iterator<Item = Token<'a>>>(tokens: &mut Peekable<I>) -> Vec<Token<'a>> {
@@ -82,6 +84,20 @@ pub enum Operator {
     Eq,
     // Not,
     // NotEq
+}
+
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Operator::*;
+        match self {
+            Add => write!(f, "+"),
+            Sub => write!(f, "-"),
+            Mod => write!(f, "%"),
+            GEt => write!(f, ">="),
+            Lt => write!(f, "<"),
+            Eq => write!(f, "=="),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
