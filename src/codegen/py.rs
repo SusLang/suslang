@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use crate::ast::{Ast, Expression, Operator, Statement, Typ};
+use crate::ast::{parse::spans::Span, Ast, Expression, Operator, Statement, Typ};
 
 use super::Codegen;
 
@@ -39,11 +39,11 @@ const fn default_value(typ: &Typ) -> &'static str {
 // 	TAB_COUNT.load(Ordering::SeqCst)
 // }
 
-impl<W> Codegen<W, [Ast]> for Py
+impl<'a, W> Codegen<W, [Span<'a, Ast<'a>>]> for Py
 where
     W: Write,
 {
-    fn gen(&mut self, s: &[Ast], buf: &mut W) -> std::io::Result<()> {
+    fn gen(&mut self, s: &[Span<'a, Ast<'a>>], buf: &mut W) -> std::io::Result<()> {
         writeln!(
             buf,
             r#"# Python code generated from suslang
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     }
 }
 
-impl<W> Codegen<W, Ast> for Py
+impl<'a, W> Codegen<W, Ast<'a>> for Py
 where
     W: Write,
 {
@@ -92,10 +92,15 @@ where
         // let mut var_tab_count: &usize = &0;
         match s {
             Ast::Func(name, _typ, args, block) => {
-                write!(buf, "def {}(", name)?;
-                for a in args.iter().flat_map(|(s, _)| [None, Some(s)]).skip(1) {
+                write!(buf, "def {name}(")?;
+                for a in args
+                    .iter()
+                    .map(|s| &s.extra.data)
+                    .flat_map(|(s, _)| [None, Some(s)])
+                    .skip(1)
+                {
                     if let Some(a) = a {
-                        write!(buf, "{}", a)?;
+                        write!(buf, "{a}")?;
                     } else {
                         write!(buf, ", ")?;
                     }
@@ -103,7 +108,7 @@ where
                 writeln!(buf, "):")?;
                 // var_tab_count = var_tab_count + 1;
                 self.tab_count += 1;
-                for line in block {
+                for line in &block.extra.data {
                     self.gen(line, buf)?;
                 }
                 self.tab_count -= 1;
@@ -113,7 +118,7 @@ where
     }
 }
 
-impl<W> Codegen<W, Statement> for Py
+impl<'a, W> Codegen<W, Statement<'a>> for Py
 where
     W: Write,
 {
@@ -136,14 +141,14 @@ where
                 self.gen(cond, buf)?;
                 writeln!(buf, ":")?;
                 self.tab_count += 1;
-                for s in b {
+                for s in &b.extra.data {
                     self.gen(s, buf)?;
                 }
                 // tab_count = tab_count - 1;
                 if let Some(e) = e {
                     // tab_count = tab_count + 1;
                     writeln!(buf, "{}else:", "\t".repeat(self.tab_count - 1))?;
-                    for s in e {
+                    for s in &e.extra.data {
                         self.gen(s, buf)?;
                     }
                 }
@@ -155,7 +160,7 @@ where
                 self.gen(cond, buf)?;
                 writeln!(buf, ":")?;
                 self.tab_count += 1;
-                for s in b {
+                for s in &b.extra.data {
                     self.gen(s, buf)?;
                 }
                 self.tab_count -= 1;
@@ -166,7 +171,7 @@ where
                 "{}{} = {}",
                 "\t".repeat(self.tab_count),
                 name,
-                default_value(typ)
+                default_value(&typ.extra.data)
             )
             .unwrap(),
             Statement::Define(name, expr) => {
@@ -179,14 +184,14 @@ where
     }
 }
 
-impl<W> Codegen<W, Expression> for Py
+impl<'a, W> Codegen<W, Expression<'a>> for Py
 where
     W: Write,
 {
     fn gen(&mut self, expr: &Expression, buf: &mut W) -> std::io::Result<()> {
         match expr {
             Expression::Call(func, args) => {
-                write!(buf, "{}(", func)?;
+                write!(buf, "{func}(")?;
                 for t in args.iter().flat_map(|x| [None, Some(x)]).skip(1) {
                     if let Some(x) = t {
                         self.gen(x, buf)?;
@@ -196,47 +201,42 @@ where
                 }
                 write!(buf, ")")?;
             }
-            Expression::Operation(Operator::Add, lhs, rhs) => {
-                // write!(buf, "{}", "\t".repeat(get_tabs()))?;
-                self.gen(lhs.as_ref(), buf)?;
-                write!(buf, " + ")?;
-                self.gen(rhs.as_ref(), buf)?;
-            }
-            Expression::Operation(Operator::Sub, lhs, rhs) => {
-                // write!(buf, "{}", "\t".repeat(get_tabs()))?;
-                self.gen(lhs.as_ref(), buf)?;
-                write!(buf, " - ")?;
-                self.gen(rhs.as_ref(), buf)?;
-            }
-            Expression::Operation(Operator::Mod, lhs, rhs) => {
-                // write!(buf, "{}", "\t".repeat(get_tabs()))?;
-                self.gen(lhs.as_ref(), buf)?;
-                write!(buf, " % ")?;
-                self.gen(rhs.as_ref(), buf)?;
-            }
-
-            Expression::Operation(Operator::Lt, lhs, rhs) => {
-                // write!(buf, "{}", "\t".repeat(get_tabs()))?;
-                self.gen(lhs.as_ref(), buf)?;
-                write!(buf, " < ")?;
-                self.gen(rhs.as_ref(), buf)?;
-            }
-            Expression::Operation(Operator::GEt, lhs, rhs) => {
-                // write!(buf, "{}", "\t".repeat(get_tabs()))?;
-                self.gen(lhs.as_ref(), buf)?;
-                write!(buf, " >= ")?;
-                self.gen(rhs.as_ref(), buf)?;
-            }
-            Expression::Operation(Operator::Eq, lhs, rhs) => {
-                // write!(buf, "{}", "\t".repeat(get_tabs()))?;
-                self.gen(lhs.as_ref(), buf)?;
-                write!(buf, " == ")?;
-                self.gen(rhs.as_ref(), buf)?;
-            }
-            Expression::StringLit(s) => write!(buf, "{:?}", s)?,
-            Expression::NumLit(n) => write!(buf, "{}", n)?,
+            Expression::Operation(op, lhs, rhs) => match op.extra.data {
+                Operator::Add => {
+                    self.gen(lhs.as_ref(), buf)?;
+                    write!(buf, " + ")?;
+                    self.gen(rhs.as_ref(), buf)?;
+                }
+                Operator::Sub => {
+                    self.gen(lhs.as_ref(), buf)?;
+                    write!(buf, " - ")?;
+                    self.gen(rhs.as_ref(), buf)?;
+                }
+                Operator::Mod => {
+                    self.gen(lhs.as_ref(), buf)?;
+                    write!(buf, " % ")?;
+                    self.gen(rhs.as_ref(), buf)?;
+                }
+                Operator::Lt => {
+                    self.gen(lhs.as_ref(), buf)?;
+                    write!(buf, " < ")?;
+                    self.gen(rhs.as_ref(), buf)?;
+                }
+                Operator::GEt => {
+                    self.gen(lhs.as_ref(), buf)?;
+                    write!(buf, " >= ")?;
+                    self.gen(rhs.as_ref(), buf)?;
+                }
+                Operator::Eq => {
+                    self.gen(lhs.as_ref(), buf)?;
+                    write!(buf, " == ")?;
+                    self.gen(rhs.as_ref(), buf)?;
+                }
+            },
+            Expression::StringLit(s) => write!(buf, "{s:?}")?,
+            Expression::NumLit(n) => write!(buf, "{n}")?,
             Expression::BoolLit(b) => write!(buf, "{}", if *b { "True" } else { "False" })?,
-            Expression::Variable(n) => write!(buf, "{}", n)?,
+            Expression::Variable(n) => write!(buf, "{n}")?,
         };
         Ok(())
     }

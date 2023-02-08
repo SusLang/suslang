@@ -118,7 +118,7 @@ where
                 writeln!(buf, "{} {};", Self::typename(&typ.extra.data), name).unwrap()
             }
             Statement::Define(name, expr) => {
-                write!(buf, "{} = ", name)?;
+                write!(buf, "{name} = ")?;
                 self.gen(expr, buf)?;
                 writeln!(buf, ";")?;
             }
@@ -151,7 +151,7 @@ where
                         break;
                     }
                 }
-                write!(buf, "{}(", func)?;
+                write!(buf, "{func}(")?;
                 let args_len = args.len();
                 for (i, arg) in args.iter().enumerate() {
                     self.gen(arg, buf)?;
@@ -161,8 +161,8 @@ where
                 }
                 write!(buf, ")")?;
             }
-            Expression::NumLit(s) => write!(buf, "{}", s)?,
-            Expression::StringLit(s) => write!(buf, "{:?}", s)?,
+            Expression::NumLit(s) => write!(buf, "{s}")?,
+            Expression::StringLit(s) => write!(buf, "{s:?}")?,
             Expression::Operation(
                 LocatedSpan {
                     extra:
@@ -257,7 +257,7 @@ where
                 write!(buf, " % ")?;
                 self.gen(rhs.as_ref(), buf)?;
             }
-            Expression::Variable(x) => write!(buf, "{}", x)?,
+            Expression::Variable(x) => write!(buf, "{x}")?,
             Expression::BoolLit(b) => write!(buf, "{}", i32::from(*b))?,
         };
         Ok(())

@@ -1,7 +1,7 @@
 mod c;
-// mod js;
-// mod py;
-// mod scm;
+mod js;
+mod py;
+mod scm;
 
 use std::io::Write;
 
@@ -38,8 +38,8 @@ where
 }
 
 pub use c::C;
-// pub use js::Js;
-// pub use py::Py;
-// pub use scm::Scm;
+pub use js::Js;
+pub use py::Py;
+pub use scm::Scm;
 
 use crate::ast::{parse::spans::Span, Typ};

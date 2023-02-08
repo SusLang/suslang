@@ -18,10 +18,10 @@ fn main() {
 
     suslang::typecheck(&ast);
 
-    // codegen_file("tmp.scm", &mut codegen::Scm, ast.as_slice());
+    codegen_file("tmp.scm", &mut codegen::Scm, ast.as_slice());
     codegen_file("tmp.c", &mut codegen::C, ast.as_slice());
-    // codegen_file("tmp.js", &mut codegen::Js, ast.as_slice());
-    // codegen_file("tmp.py", &mut codegen::Py::new(), ast.as_slice());
+    codegen_file("tmp.js", &mut codegen::Js, ast.as_slice());
+    codegen_file("tmp.py", &mut codegen::Py::new(), ast.as_slice());
 
     // let file = dbg!(load_file_str(
     //     &"test.sus",
