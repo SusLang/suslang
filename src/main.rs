@@ -10,9 +10,10 @@ fn main() {
     let helloworld = include_str!("../examples/day1.sus");
 
     let mut fs = Filesystem::new();
-    let module = Module::new("examples/day1.sus".into(), &mut fs).unwrap();
+    let module = Module::new("examples/modules.sus".into(), &mut fs).unwrap();
 
-    dbg!(&module);
+    println!("ROOT: ");
+    module.print_tree();
 
     let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
     // println!("{res:#?}");

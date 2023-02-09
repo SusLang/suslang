@@ -6,7 +6,7 @@ use nom::{
     combinator::{all_consuming, map, success},
     error::{FromExternalError, ParseError},
     multi::{many0, separated_list0},
-    sequence::{preceded, separated_pair, tuple},
+    sequence::{delimited, preceded, separated_pair, tuple},
     Parser,
 };
 use nom_supreme::{
@@ -39,31 +39,33 @@ where
     චcomplete report with "hello world"ඞ
     චeject 0ඞ
      */
-    ws(spanned(alt((map(
-        preceded(
-            ws(tag("task")),
-            tuple((
-                ws(identifier),
-                ws(tag("with")),
-                separated_list0(
-                    tag("and"),
-                    preceded(
-                        ws(tag("crewmate")),
-                        spanned(separated_pair(
-                            ws(identifier),
-                            ws(char(':')),
-                            ws(parse_type),
-                        )),
-                    ),
+    let task_parser = preceded(
+        ws(tag("task")),
+        tuple((
+            ws(identifier),
+            ws(tag("with")),
+            separated_list0(
+                tag("and"),
+                preceded(
+                    ws(tag("crewmate")),
+                    spanned(separated_pair(
+                        ws(identifier),
+                        ws(char(':')),
+                        ws(parse_type),
+                    )),
                 ),
-                alt((
-                    ws(preceded(ws(char('➤')), ws(parse_type))),
-                    spanned(success(Typ::Void)),
-                )),
-                parse_block(1),
+            ),
+            alt((
+                ws(preceded(ws(char('➤')), ws(parse_type))),
+                spanned(success(Typ::Void)),
             )),
-        ),
-        |(name, _, args, ret, block)| {
+            parse_block(1),
+        )),
+    );
+
+    let mod_parser = delimited(ws(tag("room")), ws(identifier), ws(char('ඞ')));
+    ws(spanned(alt((
+        map(task_parser, |(name, _, args, ret, block)| {
             Ast::Func(
                 name.map(|x| x.0.to_string()),
                 ret,
@@ -72,8 +74,11 @@ where
                     .collect(),
                 block,
             )
-        },
-    ),))))
+        }),
+        map(mod_parser, |mod_name| {
+            Ast::Mod(mod_name.map(|x| x.0.into()))
+        }),
+    ))))
     .parse(i)
 }
 

@@ -12,7 +12,7 @@ where
     lifetime: PhantomData<&'a ()>,
 }
 
-// TODO is it safe?
+// TODO is it safe? NO
 
 impl<'a> Filesystem<'a> {
     pub fn new() -> Self {
