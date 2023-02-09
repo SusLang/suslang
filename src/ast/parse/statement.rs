@@ -24,9 +24,8 @@ use super::{
     identifier,
     inline_comment::ws,
     // opt::opt,
-    spans::{spanned, spanned_map, MapExt, Span},
+    spans::{spanned, MapExt, Span},
     typ::parse_type,
-    Identifier,
 };
 
 pub fn parse_if<'a, E>(suslevel: usize) -> impl FnMut(Span<'a>) -> IResult<'a, E, Statement>

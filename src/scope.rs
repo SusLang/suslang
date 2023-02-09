@@ -5,7 +5,7 @@ pub trait Scope<T, K>: Debug {
 
     fn get(&self, n: &K) -> Option<&T>;
 
-    fn push<'b>(&'b mut self) -> ChildScope<'b, T, K>;
+    fn push(&mut self) -> ChildScope<T, K>;
 }
 
 #[derive(Debug)]
@@ -42,7 +42,7 @@ where
         self.data.get(n)
     }
 
-    fn push<'b>(&'b mut self) -> ChildScope<'b, T, K> {
+    fn push(&mut self) -> ChildScope<T, K> {
         ChildScope::new(self)
     }
 }
@@ -74,7 +74,7 @@ where
         self.data.get(n).or_else(|| self.parent.get(n))
     }
 
-    fn push<'c>(&'c mut self) -> ChildScope<'c, T, K> {
+    fn push(&mut self) -> ChildScope<T, K> {
         ChildScope::new(self)
     }
 }

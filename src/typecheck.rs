@@ -85,7 +85,7 @@ fn typecheck_body<'a, S>(
         match &line.extra.data {
             Statement::If(cond, body, else_body) => {
                 // typecheck condition
-                let e_type = typecheck_expr(&mut scope, f_name, &cond);
+                let e_type = typecheck_expr(&mut scope, f_name, cond);
                 if e_type != Type::Bool {
                     panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
                 }
@@ -96,7 +96,7 @@ fn typecheck_body<'a, S>(
             }
             Statement::While(cond, body) => {
                 // typecheck condition
-                let e_type = typecheck_expr(&mut scope, f_name, &cond);
+                let e_type = typecheck_expr(&mut scope, f_name, cond);
                 if e_type != Type::Bool {
                     panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
                 }
@@ -115,17 +115,17 @@ fn typecheck_body<'a, S>(
             }
             Statement::Expr(e) => {
                 // Typecheck expression
-                typecheck_expr(&mut scope, f_name, &e);
+                typecheck_expr(&mut scope, f_name, e);
             }
             Statement::Declare(name, t) => {
                 scope.add(&name.extra.data, t.map(Into::into));
             }
             Statement::Define(name, e) => {
-                let t = scope.get(&name).cloned();
+                let t = scope.get(name).cloned();
                 t.map_or_else(|| {
-                    panic!("{} is not defined", name);
+                    panic!("{name} is not defined");
                 }, |t| {
-                    let e_type = typecheck_expr(&mut scope, f_name, &e);
+                    let e_type = typecheck_expr(&mut scope, f_name, e);
                     if t.extra.data != e_type {
                         panic!("Error on variable assigment in function {f_name}: Expected {t:?}, but found {e_type:?}");
                     }

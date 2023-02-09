@@ -14,7 +14,7 @@ pub mod codegen;
 pub mod fs;
 pub mod module;
 mod scope;
-mod tokens;
+// mod tokens;
 mod typecheck;
 
 pub use typecheck::typecheck;
