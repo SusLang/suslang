@@ -13,7 +13,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum Type {
+pub enum Type {
     Function(Vec<Self>, Box<Self>),
     Void,
     Number,

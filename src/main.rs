@@ -15,6 +15,12 @@ fn main() {
     println!("ROOT: ");
     module.print_tree();
 
+    // dbg!(module.get_module(&["ifs".into()]));
+    // dbg!(module.get_module(&["lib".into()]));
+    // dbg!(module.get_module(&["lib".into(), "ifs".into()]));
+    // dbg!(module.get_module(&["lib".into(), "a".into()]));
+    // dbg!(module.get_module(&[]));
+
     let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
     // println!("{res:#?}");
     let ast = res.unwrap().1;
