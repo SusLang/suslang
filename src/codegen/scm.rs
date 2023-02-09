@@ -76,6 +76,7 @@ where
 {
     fn gen(&mut self, s: &Ast, buf: &mut W) -> std::io::Result<()> {
         match s {
+            Ast::Mod(_) => (),
             Ast::Func(name, _, args, blocks) => {
                 write!(buf, "( define ( {name} ")?;
                 for arg in args.iter() {

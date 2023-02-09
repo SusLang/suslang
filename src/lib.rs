@@ -1,16 +1,17 @@
 use std::{
     fs::File,
-    io::{BufWriter, Read, Write},
+    io::{BufWriter, Write},
     path::Path,
 };
 
 use ast::{parse::spans::Span, Ast};
 use codegen::Codegen;
 
-use crate::tokens::{tokenize, Token};
+// use crate::tokens::{tokenize, Token};
 
 pub mod ast;
 pub mod codegen;
+pub mod fs;
 pub mod module;
 mod scope;
 mod tokens;

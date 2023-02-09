@@ -91,6 +91,7 @@ where
     fn gen(&mut self, s: &Ast, buf: &mut W) -> std::io::Result<()> {
         // let mut var_tab_count: &usize = &0;
         match s {
+            Ast::Mod(_) => Ok(()),
             Ast::Func(name, _typ, args, block) => {
                 write!(buf, "def {name}(")?;
                 for a in args

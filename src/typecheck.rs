@@ -38,6 +38,7 @@ pub fn typecheck(a: &[Span<Ast>]) {
     > = GlobalScope::new();
     for a in a {
         match &a.extra.data {
+            Ast::Mod(_) => (),
             Ast::Func(name, ret, args, _) => scopes.add(
                 &name.extra.data,
                 a.clone().map(|_| {
@@ -54,6 +55,7 @@ pub fn typecheck(a: &[Span<Ast>]) {
 
     for a in a {
         match &a.extra.data {
+            Ast::Mod(_) => (),
             Ast::Func(name, ret, args, body) => {
                 let ret = ret.map(Into::into);
                 let f_name = name;

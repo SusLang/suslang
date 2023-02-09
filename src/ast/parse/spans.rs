@@ -51,7 +51,10 @@ impl<'a, E> MapExt for Span<'a, E> {
 
 pub type Span<'a, T = ()> = LocatedSpan<&'a str, ExtraData<'a, T>>;
 
-pub fn load_file_str<'a, P: AsRef<Path>>(path: &'a P, contents: &'a str) -> Span<'a> {
+pub fn load_file_str<'a, P: AsRef<Path>>(path: &'a P, contents: &'a str) -> Span<'a>
+where
+    P: ?Sized,
+{
     Span::new_extra(
         contents,
         ExtraData {

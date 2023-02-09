@@ -1,11 +1,18 @@
 use suslang::{
     ast::parse::{error::ParseError, items::parse_items, spans::load_file_str},
     codegen, codegen_file,
+    fs::Filesystem,
+    module::Module,
 };
 
 fn main() {
     // println!("Hello, world!");
     let helloworld = include_str!("../examples/day1.sus");
+
+    let mut fs = Filesystem::new();
+    let module = Module::new("examples/day1.sus".into(), &mut fs).unwrap();
+
+    dbg!(&module);
 
     let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
     // println!("{res:#?}");
@@ -28,4 +35,6 @@ fn main() {
     //     r#"+ 1 complete report with "%d %s\n" and (complete add with - 1 3 and 0b10) and "AA""#
     // ));
     // println!("RESULT: {:#?}", parse_expr::<ParseError<_>>(file));
+    drop(module);
+    drop(fs);
 }
