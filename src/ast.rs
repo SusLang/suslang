@@ -455,3 +455,56 @@ pub enum Ast<'a> {
 //         }
 //     }
 // }
+
+macro_rules! span {
+    // `()` indicates that the macro takes no argument.
+    ($inner:pat) => {
+        LocatedSpan {
+            extra: ExtraData { data: $inner, .. },
+            ..
+        }
+    };
+}
+
+#[cfg(test)]
+mod testing {
+    use nom_locate::LocatedSpan;
+
+    use super::{parse::spans::ExtraData, Ast, Block, Statement, Typ};
+
+    fn matches_func<'a, B: FnOnce(&Block) -> bool + 'a>(
+        name: &'a str,
+        args: &'a [(&'a str, &'a Typ)],
+        return_type: &'a Typ,
+        block: B,
+    ) -> impl FnOnce(&Ast) -> bool + 'a {
+        move |s| {
+            if let Ast::Func(span!(fname), span!(ret), args_o, span!(b)) = s {
+                fname == name
+                    && ret == return_type
+                    && block(b)
+                    && args_o
+                        .iter()
+                        .enumerate()
+                        .all(|(i, span!((span!(n), span!(t))))| {
+                            i < args.len() && {
+                                let (name, typ) = args[i];
+                                name == n && typ == t
+                            }
+                        })
+            } else {
+                false
+            }
+        }
+    }
+
+    fn matches_array<'a, T: 'a, I: Iterator<Item = Box<dyn FnOnce(&T) -> bool>>>(
+        matchers: I,
+    ) -> impl FnOnce(&[T]) -> bool {
+        move |arr| {
+            matchers
+                .enumerate()
+                .all(|(i, x)| i < arr.len() && x(&arr[i]))
+        }
+    }
+}

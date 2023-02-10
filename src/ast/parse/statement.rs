@@ -158,201 +158,201 @@ crewmate red: numberඞ
 make red 5ඞ
 eject 0ඞ"#;
 
-    // #[test]
-    // fn parse_block() {
-    //     let data = load_file_str(&"test.sus", TEST_DATA);
-    //     let b = super::parse_block::<super::super::error::ParseError<Span>>(0)(data).map(
-    //         |(rest, s)| {
-    //             (
-    //                 *rest.fragment(),
-    //                 s.extra
-    //                     .data
-    //                     .into_iter()
-    //                     .map(|x| x.extra.data)
-    //                     .collect::<Vec<_>>(),
-    //             )
-    //         },
-    //     );
-    //     let expected = (
-    //         "",
-    //         vec![
-    //             Statement::If(
-    //                 Expression::Operation(
-    //                     Operator::Lt,
-    //                     Box::new(Expression::NumLit(2)),
-    //                     Box::new(Expression::NumLit(5)),
-    //                 ),
-    //                 vec![Statement::Expr(Expression::Call(
-    //                     "report".into(),
-    //                     vec![Expression::StringLit("hey\n".into())],
-    //                 ))],
-    //                 None,
-    //             ),
-    //             Statement::If(
-    //                 Expression::Operation(
-    //                     Operator::Lt,
-    //                     Box::new(Expression::NumLit(2)),
-    //                     Box::new(Expression::NumLit(5)),
-    //                 ),
-    //                 vec![Statement::Expr(Expression::Call(
-    //                     "report".into(),
-    //                     vec![Expression::StringLit("hey\n".into())],
-    //                 ))],
-    //                 None,
-    //             ),
-    //             Statement::Declare("red".into(), crate::ast::Typ::Num),
-    //             Statement::Define("red".into(), Expression::NumLit(5)),
-    //             Statement::Return(Some(Expression::NumLit(0))),
-    //         ],
-    //     );
-    //     println!("RESULT: {b:#?}");
-    //     assert!(b.is_ok());
-    //     let unwrapped = b.unwrap();
-    //     assert_eq!(
-    //         unwrapped, expected,
-    //         "Expected: {expected:#?}\n But got: {unwrapped:#?}"
-    //     );
-    // }
+    #[test]
+    fn parse_block() {
+        let data = load_file_str(&"test.sus", TEST_DATA);
+        let b = super::parse_block::<super::super::error::ParseError<Span>>(0)(data).map(
+            |(rest, s)| {
+                (
+                    *rest.fragment(),
+                    s.extra
+                        .data
+                        .into_iter()
+                        .map(|x| x.extra.data)
+                        .collect::<Vec<_>>(),
+                )
+            },
+        );
+        let expected = (
+            "",
+            vec![
+                Statement::If(
+                    Expression::Operation(
+                        Operator::Lt,
+                        Box::new(Expression::NumLit(2)),
+                        Box::new(Expression::NumLit(5)),
+                    ),
+                    vec![Statement::Expr(Expression::Call(
+                        "report".into(),
+                        vec![Expression::StringLit("hey\n".into())],
+                    ))],
+                    None,
+                ),
+                Statement::If(
+                    Expression::Operation(
+                        Operator::Lt,
+                        Box::new(Expression::NumLit(2)),
+                        Box::new(Expression::NumLit(5)),
+                    ),
+                    vec![Statement::Expr(Expression::Call(
+                        "report".into(),
+                        vec![Expression::StringLit("hey\n".into())],
+                    ))],
+                    None,
+                ),
+                Statement::Declare("red".into(), crate::ast::Typ::Num),
+                Statement::Define("red".into(), Expression::NumLit(5)),
+                Statement::Return(Some(Expression::NumLit(0))),
+            ],
+        );
+        println!("RESULT: {b:#?}");
+        assert!(b.is_ok());
+        let unwrapped = b.unwrap();
+        assert_eq!(
+            unwrapped, expected,
+            "Expected: {expected:#?}\n But got: {unwrapped:#?}"
+        );
+    }
 
-    //     #[test]
-    //     fn parse_if() {
-    //         const TEST_IF: &str = r#"sus? < 2 5
-    // චcomplete report with "hey\n"ඞ
+    #[test]
+    fn parse_if() {
+        const TEST_IF: &str = r#"sus? < 2 5
+    චcomplete report with "hey\n"ඞ
 
-    // "#;
-    //         let res = super::parse_if::<super::super::error::ParseError<Span>>(0)(load_file_str(
-    //             &"test_if.sus",
-    //             TEST_IF,
-    //         ));
-    //         dbg!(&res);
-    //         assert!(res.is_ok());
-    //         assert_eq!(
-    //             res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
-    //             (
-    //                 "",
-    //                 Statement::If(
-    //                     Expression::Operation(
-    //                         Operator::Lt,
-    //                         Box::new(Expression::NumLit(2)),
-    //                         Box::new(Expression::NumLit(5))
-    //                     ),
-    //                     vec![Statement::Expr(Expression::Call(
-    //                         "report".into(),
-    //                         vec![Expression::StringLit("hey\n".into())]
-    //                     ))],
-    //                     None
-    //                 )
-    //             )
-    //         )
-    //     }
+    "#;
+        let res = super::parse_if::<super::super::error::ParseError<Span>>(0)(load_file_str(
+            &"test_if.sus",
+            TEST_IF,
+        ));
+        dbg!(&res);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
+            (
+                "",
+                Statement::If(
+                    Expression::Operation(
+                        Operator::Lt,
+                        Box::new(Expression::NumLit(2)),
+                        Box::new(Expression::NumLit(5))
+                    ),
+                    vec![Statement::Expr(Expression::Call(
+                        "report".into(),
+                        vec![Expression::StringLit("hey\n".into())]
+                    ))],
+                    None
+                )
+            )
+        )
+    }
 
-    // #[test]
-    // fn parse_statement_expr() {
-    //     const TEST_STATEMENT: &str = r#"චcomplete report with "hey\n"ඞ"#;
-    //     let res = super::parse_statement::<super::super::error::ParseError<Span>>(1)(
-    //         load_file_str(&"test_statement.sus", TEST_STATEMENT),
-    //     );
-    //     dbg!(&res);
-    //     assert!(res.is_ok());
-    //     assert_eq!(
-    //         res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
-    //         (
-    //             "",
-    //             Statement::Expr(Expression::Call(
-    //                 "report".into(),
-    //                 vec![Expression::StringLit("hey\n".into())]
-    //             ))
-    //         )
-    //     )
-    // }
+    #[test]
+    fn parse_statement_expr() {
+        const TEST_STATEMENT: &str = r#"චcomplete report with "hey\n"ඞ"#;
+        let res = super::parse_statement::<super::super::error::ParseError<Span>>(1)(
+            load_file_str(&"test_statement.sus", TEST_STATEMENT),
+        );
+        dbg!(&res);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
+            (
+                "",
+                Statement::Expr(Expression::Call(
+                    "report".into(),
+                    vec![Expression::StringLit("hey\n".into())]
+                ))
+            )
+        )
+    }
 
-    // #[test]
-    // fn parse_statement_eject() {
-    //     const TEST_STATEMENT1: &str = r#"චeject "hey\n"ඞ"#;
-    //     let res = super::parse_block::<super::super::error::ParseError<Span>>(1)(load_file_str(
-    //         &"test_statement.sus",
-    //         TEST_STATEMENT1,
-    //     ));
-    //     dbg!(&res);
-    //     assert!(res.is_ok());
-    //     assert_eq!(
-    //         res.map(|(a, b)| (
-    //             *a.fragment(),
-    //             b.extra.data.into_iter().map(|s| s.extra.data).collect()
-    //         ))
-    //         .unwrap(),
-    //         (
-    //             "",
-    //             vec![Statement::Return(Some(Expression::StringLit(
-    //                 "hey\n".into()
-    //             )))]
-    //         )
-    //     );
+    #[test]
+    fn parse_statement_eject() {
+        const TEST_STATEMENT1: &str = r#"චeject "hey\n"ඞ"#;
+        let res = super::parse_block::<super::super::error::ParseError<Span>>(1)(load_file_str(
+            &"test_statement.sus",
+            TEST_STATEMENT1,
+        ));
+        dbg!(&res);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.map(|(a, b)| (
+                *a.fragment(),
+                b.extra.data.into_iter().map(|s| s.extra.data).collect()
+            ))
+            .unwrap(),
+            (
+                "",
+                vec![Statement::Return(Some(Expression::StringLit(
+                    "hey\n".into()
+                )))]
+            )
+        );
 
-    //     const TEST_STATEMENT2: &str = r#"ejectඞ"#;
-    //     let res = super::parse_statement::<super::super::error::ParseError<Span>>(0)(
-    //         load_file_str(&"test_statement.sus", TEST_STATEMENT2),
-    //     );
-    //     // dbg!(terminated(
-    //     //     spanned::<super::super::error::ParseError<Span>, _, _>(map(
-    //     //         preceded(ws(tag("eject")), opt(ws(super::parse_expr))),
-    //     //         |x| { Statement::Return(x.map(|s| s.extra.data)) }
-    //     //     )),
-    //     //     success(()) // char('ඞ'),
-    //     // )(load_file_str(
-    //     //     &"test_statement.sus",
-    //     //     TEST_STATEMENT2
-    //     // )));
-    //     dbg!(&res);
-    //     assert!(res.is_ok());
-    //     assert_eq!(
-    //         res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
-    //         ("", Statement::Return(None))
-    //     )
-    // }
+        const TEST_STATEMENT2: &str = r#"ejectඞ"#;
+        let res = super::parse_statement::<super::super::error::ParseError<Span>>(0)(
+            load_file_str(&"test_statement.sus", TEST_STATEMENT2),
+        );
+        // dbg!(terminated(
+        //     spanned::<super::super::error::ParseError<Span>, _, _>(map(
+        //         preceded(ws(tag("eject")), opt(ws(super::parse_expr))),
+        //         |x| { Statement::Return(x.map(|s| s.extra.data)) }
+        //     )),
+        //     success(()) // char('ඞ'),
+        // )(load_file_str(
+        //     &"test_statement.sus",
+        //     TEST_STATEMENT2
+        // )));
+        dbg!(&res);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
+            ("", Statement::Return(None))
+        )
+    }
 
-    //     #[test]
-    //     fn parse_while() {
-    //         const TEST_WHILE: &str = r#"while < 2 5
-    // චwhile < 2 5
-    // චචcomplete report with "hey\n"ඞ
-    // චcomplete report with "hey\n"ඞ
-    // "#;
-    //         let res = super::parse_while::<super::super::error::ParseError<Span>>(0)(load_file_str(
-    //             &"test_while.sus",
-    //             TEST_WHILE,
-    //         ));
-    //         dbg!(&res);
-    //         assert!(res.is_ok());
-    //         assert_eq!(
-    //             res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
-    //             (
-    //                 "",
-    //                 Statement::While(
-    //                     Expression::Operation(
-    //                         Operator::Lt,
-    //                         Box::new(Expression::NumLit(2)),
-    //                         Box::new(Expression::NumLit(5))
-    //                     ),
-    //                     vec![
-    //                         Statement::While(
-    //                             Expression::Operation(
-    //                                 Operator::Lt,
-    //                                 Box::new(Expression::NumLit(2)),
-    //                                 Box::new(Expression::NumLit(5))
-    //                             ),
-    //                             vec![Statement::Expr(Expression::Call(
-    //                                 "report".into(),
-    //                                 vec![Expression::StringLit("hey\n".into())]
-    //                             ))]
-    //                         ),
-    //                         Statement::Expr(Expression::Call(
-    //                             "report".into(),
-    //                             vec![Expression::StringLit("hey\n".into())]
-    //                         ))
-    //                     ]
-    //                 )
-    //             )
-    //         )
-    //     }
+    #[test]
+    fn parse_while() {
+        const TEST_WHILE: &str = r#"while < 2 5
+    චwhile < 2 5
+    චචcomplete report with "hey\n"ඞ
+    චcomplete report with "hey\n"ඞ
+    "#;
+        let res = super::parse_while::<super::super::error::ParseError<Span>>(0)(load_file_str(
+            &"test_while.sus",
+            TEST_WHILE,
+        ));
+        dbg!(&res);
+        assert!(res.is_ok());
+        assert_eq!(
+            res.map(|(a, b)| (*a.fragment(), b.extra.data)).unwrap(),
+            (
+                "",
+                Statement::While(
+                    Expression::Operation(
+                        Operator::Lt,
+                        Box::new(Expression::NumLit(2)),
+                        Box::new(Expression::NumLit(5))
+                    ),
+                    vec![
+                        Statement::While(
+                            Expression::Operation(
+                                Operator::Lt,
+                                Box::new(Expression::NumLit(2)),
+                                Box::new(Expression::NumLit(5))
+                            ),
+                            vec![Statement::Expr(Expression::Call(
+                                "report".into(),
+                                vec![Expression::StringLit("hey\n".into())]
+                            ))]
+                        ),
+                        Statement::Expr(Expression::Call(
+                            "report".into(),
+                            vec![Expression::StringLit("hey\n".into())]
+                        ))
+                    ]
+                )
+            )
+        )
+    }
 }
