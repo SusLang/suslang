@@ -1,13 +1,15 @@
+use miette::{ErrReport, IntoDiagnostic};
 use suslang::{
     ast::parse::{error::ParseError, items::parse_items, spans::load_file_str},
     codegen, codegen_file,
+    error::TypeCheckError,
     fs::Filesystem,
     module::Module,
 };
 
 fn main() {
     // println!("Hello, world!");
-    let helloworld = include_str!("../examples/day1.sus");
+    // let helloworld = include_str!("../examples/day1.sus");
 
     let mut fs = Filesystem::new();
     let module = Module::new("examples/modules.sus".into(), &mut fs).unwrap();
@@ -21,16 +23,25 @@ fn main() {
     // dbg!(module.get_module(&["lib".into(), "a".into()]));
     // dbg!(module.get_module(&[]));
 
-    let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
-    // println!("{res:#?}");
-    let ast = res.unwrap().1;
+    // let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
+    // // println!("{res:#?}");
+    let ast = &module.items;
     // .into_iter()
     // .map(|s| s.extra.data)
     // .collect::<Vec<_>>();
 
     // let ast = suslang::parse_str(helloworld);
 
-    suslang::typecheck(&ast);
+    if let Err(report) = suslang::typecheck(ast, &module) {
+        match report {
+            TypeCheckError::ItemNotFound(e) => {
+                let r = miette::Report::from(e);
+                eprintln!("{r:?}");
+            }
+            e => eprintln!("{e}"),
+        }
+        std::process::exit(1);
+    }
 
     codegen_file("tmp.scm", &mut codegen::Scm, ast.as_slice());
     codegen_file("tmp.c", &mut codegen::C, ast.as_slice());

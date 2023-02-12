@@ -353,8 +353,10 @@ pub enum Ast<'a> {
         Vec<Span<'a, (Span<'a, String>, Span<'a, Typ>)>>,
         Span<'a, Block<'a>>,
     ),
-    Mod(Span<'a, String>), //Declare(String, Typ),
-                           //Define(String, Statement)
+    Mod(Span<'a, String>),
+    Import(Span<'a, Vec<String>>),
+    //Declare(String, Typ),
+    //Define(String, Statement)
 }
 
 // impl Parse for Ast {

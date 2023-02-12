@@ -58,37 +58,45 @@ impl<'a> Module<'a> {
             }
         }
 
-        Ok(Self {
+        let mut s = Self {
             items,
             submodules,
             exports: None,
             path,
-        })
+        };
+        s.load_exports();
+        Ok(s)
     }
 
-    pub fn get_exports(&mut self) -> impl Iterator<Item = (&str, &Type)> {
-        self.exports
-            .get_or_insert_with(|| {
-                let mut hm = HashMap::with_capacity(self.items.len());
-                for item in &self.items {
-                    match &item.extra.data {
-                        Ast::Func(name, ret, args, _) => {
-                            hm.insert(
-                                name.extra.data.clone(),
-                                Type::Function(
-                                    args.iter()
-                                        .map(|x| x.extra.data.1.extra.data.into())
-                                        .collect(),
-                                    Box::new(ret.extra.data.into()),
-                                ),
-                            );
-                        }
-                        Ast::Mod(_) => (),
+    fn load_exports(&mut self) {
+        self.exports.get_or_insert_with(|| {
+            let mut hm = HashMap::with_capacity(self.items.len());
+            for item in &self.items {
+                match &item.extra.data {
+                    Ast::Func(name, ret, args, _) => {
+                        hm.insert(
+                            name.extra.data.clone(),
+                            Type::Function(
+                                args.iter()
+                                    .map(|x| x.extra.data.1.extra.data.into())
+                                    .collect(),
+                                Box::new(ret.extra.data.into()),
+                            ),
+                        );
                     }
+                    Ast::Mod(_) => (),
+                    Ast::Import(_) => (),
                 }
-                hm.shrink_to_fit();
-                hm
-            })
+            }
+            hm.shrink_to_fit();
+            hm
+        });
+    }
+
+    pub fn get_exports(&self) -> impl Iterator<Item = (&str, &Type)> {
+        self.exports
+            .as_ref()
+            .unwrap()
             .iter()
             .map(|(a, b)| (a.as_str(), b))
     }

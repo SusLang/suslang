@@ -3,16 +3,18 @@ use nom::{
     character::complete::{char, digit1, satisfy},
     combinator::{map, recognize},
     error::ParseError,
-    multi::many0_count,
+    multi::{many0_count, separated_list1},
     sequence::pair,
     Parser,
 };
 use nom_supreme::{context::ContextError, ParserExt};
 
+use crate::module::ModuleUsePath;
+
 use self::{
     context::Context,
     error::IResult,
-    spans::{MapExt, Span},
+    spans::{spanned, MapExt, Span},
 };
 
 use super::{Expression, Operator};
@@ -53,5 +55,16 @@ where
         |span: Span| span.map(|()| Identifier(span.fragment())),
     )
     .context(Context::Identifier)
+    .parse(input)
+}
+
+pub fn path<'a, E>(input: Span<'a>) -> IResult<'a, E, ModuleUsePath>
+where
+    E: ParseError<Span<'a>> + ContextError<Span<'a>, Context>,
+{
+    spanned(map(separated_list1(char('.'), identifier), |x| {
+        x.into_iter().map(|x| x.extra.data.0.into()).collect()
+    }))
+    .context(Context::Path)
     .parse(input)
 }

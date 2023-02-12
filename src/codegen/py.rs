@@ -92,6 +92,7 @@ where
         // let mut var_tab_count: &usize = &0;
         match s {
             Ast::Mod(_) => Ok(()),
+            Ast::Import(_) => todo!(),
             Ast::Func(name, _typ, args, block) => {
                 write!(buf, "def {name}(")?;
                 for a in args

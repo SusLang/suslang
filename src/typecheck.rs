@@ -1,6 +1,6 @@
 // Replace with Typ if functions is added as a type
 
-use std::fmt::Debug;
+use std::{borrow::Cow, fmt::Debug};
 
 use nom_locate::LocatedSpan;
 
@@ -9,6 +9,8 @@ use crate::{
         parse::spans::{ExtraData, MapExt, Span},
         Ast, Expression, Operator, Statement, Typ,
     },
+    error::{ItemNotFound, TypeCheckError},
+    module::Module,
     scope::{GlobalScope, Scope},
 };
 
@@ -32,15 +34,35 @@ impl From<Typ> for Type {
     }
 }
 
-pub fn typecheck(a: &[Span<Ast>]) {
+pub fn typecheck(
+    a: &[Span<Ast>],
+    module_graph: &Module,
+) -> Result<(), crate::error::TypeCheckError> {
     let mut scopes: GlobalScope<
         nom_locate::LocatedSpan<&str, crate::ast::parse::spans::ExtraData<Type>>,
+        Cow<str>,
     > = GlobalScope::new();
     for a in a {
         match &a.extra.data {
             Ast::Mod(_) => (),
+            Ast::Import(path) => module_graph
+                .get_module(&path.extra.data[..(path.extra.data.len() - 1)])
+                .map_or_else(
+                    || panic!("Module {} not found", path.extra.data.join(".")),
+                    |module| {
+                        if let Some((name, value)) = module
+                            .get_exports()
+                            .find(|(name, _)| name == path.extra.data.last().unwrap())
+                        {
+                            scopes.add(name.into(), path.clone().map(|_| value.clone()));
+                            Ok(())
+                        } else {
+                            Err(ItemNotFound::from(path.clone().map(|_| ())))
+                        }
+                    },
+                )?,
             Ast::Func(name, ret, args, _) => scopes.add(
-                &name.extra.data,
+                name.extra.data.clone().into(),
                 a.clone().map(|_| {
                     Type::Function(
                         args.iter()
@@ -56,21 +78,23 @@ pub fn typecheck(a: &[Span<Ast>]) {
     for a in a {
         match &a.extra.data {
             Ast::Mod(_) => (),
+            Ast::Import(_) => (),
             Ast::Func(name, ret, args, body) => {
                 let ret = ret.map(Into::into);
                 let f_name = name;
                 let mut scope = scopes.push();
                 for arg in args {
                     scope.add(
-                        &arg.extra.data.0.extra.data,
+                        arg.extra.data.0.extra.data.as_str().into(),
                         arg.extra.data.1.map(Into::into),
                     );
                 }
 
-                typecheck_body(scope, &f_name.extra.data, &ret, &body.extra.data);
+                typecheck_body(scope, &f_name.extra.data, &ret, &body.extra.data)?;
             }
         }
     }
+    Ok(())
 }
 
 fn typecheck_body<'a, S>(
@@ -78,36 +102,37 @@ fn typecheck_body<'a, S>(
     f_name: &str,
     ret: &Span<'a, Type>,
     body: &'a [Span<'a, Statement>],
-) where
-    S: Scope<Span<'a, Type>, &'a str>,
+) -> Result<(), crate::error::TypeCheckError>
+where
+    S: Scope<Span<'a, Type>, Cow<'a, str>>,
 {
     for line in body {
         match &line.extra.data {
             Statement::If(cond, body, else_body) => {
                 // typecheck condition
-                let e_type = typecheck_expr(&mut scope, f_name, cond);
+                let e_type = typecheck_expr(&mut scope, f_name, cond)?;
                 if e_type != Type::Bool {
                     panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
                 }
-                typecheck_body(scope.push(), f_name, ret, &body.extra.data);
+                typecheck_body(scope.push(), f_name, ret, &body.extra.data)?;
                 if let Some(else_body) = else_body.as_ref() {
-                    typecheck_body(scope.push(), f_name, ret, &else_body.extra.data);
+                    typecheck_body(scope.push(), f_name, ret, &else_body.extra.data)?;
                 }
             }
             Statement::While(cond, body) => {
                 // typecheck condition
-                let e_type = typecheck_expr(&mut scope, f_name, cond);
+                let e_type = typecheck_expr(&mut scope, f_name, cond)?;
                 if e_type != Type::Bool {
                     panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
                 }
-                typecheck_body(scope.push(), f_name, ret, &body.extra.data);
+                typecheck_body(scope.push(), f_name, ret, &body.extra.data)?;
             }
             Statement::Return(x) => {
                 // Check expression type is the same as ret
                 let e_type = x
                     .as_ref()
                     .map(|x| typecheck_expr(&mut scope, f_name, x))
-                    .unwrap_or(Type::Void);
+                    .unwrap_or(Ok(Type::Void))?;
                 if e_type != ret.extra.data {
                     panic!("Error on return type for function {f_name}: expected {ret:?} but found {e_type:?}")
                 }
@@ -118,28 +143,34 @@ fn typecheck_body<'a, S>(
                 typecheck_expr(&mut scope, f_name, e);
             }
             Statement::Declare(name, t) => {
-                scope.add(&name.extra.data, t.map(Into::into));
+                scope.add(name.extra.data.as_str().into(), t.map(Into::into));
             }
             Statement::Define(name, e) => {
-                let t = scope.get(name).cloned();
+                let t = scope.get(&name.extra.data.as_str().into()).cloned();
                 t.map_or_else(|| {
                     panic!("{name} is not defined");
-                }, |t| {
-                    let e_type = typecheck_expr(&mut scope, f_name, e);
+                }, |t| -> Result<(), TypeCheckError> {
+                    let e_type = typecheck_expr(&mut scope, f_name, e)?;
                     if t.extra.data != e_type {
                         panic!("Error on variable assigment in function {f_name}: Expected {t:?}, but found {e_type:?}");
                     }
-                })
+                    Ok(())
+                })?
             }
         }
     }
+    Ok(())
 }
 
-fn typecheck_expr<'a, S>(scope: &mut S, f_name: &str, e: &'a Span<'a, Expression>) -> Type
+fn typecheck_expr<'a, S>(
+    scope: &mut S,
+    f_name: &str,
+    e: &'a Span<'a, Expression>,
+) -> Result<Type, crate::error::TypeCheckError>
 where
-    S: Scope<Span<'a, Type>, &'a str> + ?Sized,
+    S: Scope<Span<'a, Type>, Cow<'a, str>> + ?Sized,
 {
-    match &e.extra.data {
+    Ok(match &e.extra.data {
         Expression::Call(name, args) if name.extra.data == "report" => {
             // COMPILER MAGIIIC
             if args.is_empty() {
@@ -177,6 +208,7 @@ where
                 .map(|x| typecheck_expr(scope, f_name, x))
                 .zip(expected_args)
             {
+                let found = found?;
                 if !expected.contains(&found) {
                     will_crash = true;
                     eprintln!("On function {f_name}: In arguments for call to report expected {expected:?}, but found {found:?}")
@@ -196,7 +228,7 @@ where
                     args.len()
                 );
             }
-            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            let t = typecheck_expr(scope, f_name, args.first().unwrap())?;
             if t != Type::String {
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
@@ -210,12 +242,12 @@ where
                     args.len()
                 );
             }
-            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            let t = typecheck_expr(scope, f_name, args.first().unwrap())?;
             if t != Type::String {
                 // for now only strings
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
-            let t = typecheck_expr(scope, f_name, args.last().unwrap());
+            let t = typecheck_expr(scope, f_name, args.last().unwrap())?;
             if t != Type::Number {
                 panic!("On function {f_name}: Expected Number, found {t:?}");
             }
@@ -229,16 +261,16 @@ where
                     args.len()
                 );
             }
-            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            let t = typecheck_expr(scope, f_name, args.first().unwrap())?;
             if t != Type::String {
                 // for now only strings
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
-            let t = typecheck_expr(scope, f_name, args.get(1).unwrap());
+            let t = typecheck_expr(scope, f_name, args.get(1).unwrap())?;
             if t != Type::Number {
                 panic!("On function {f_name}: Expected Number, found {t:?}");
             }
-            let t = typecheck_expr(scope, f_name, args.last().unwrap());
+            let t = typecheck_expr(scope, f_name, args.last().unwrap())?;
             if t != Type::String {
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
@@ -252,15 +284,15 @@ where
                     args.len()
                 );
             }
-            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            let t = typecheck_expr(scope, f_name, args.first().unwrap())?;
             if t != Type::String {
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
-            let t = typecheck_expr(scope, f_name, args.get(1).unwrap());
+            let t = typecheck_expr(scope, f_name, args.get(1).unwrap())?;
             if t != Type::String {
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
-            let t = typecheck_expr(scope, f_name, args.last().unwrap());
+            let t = typecheck_expr(scope, f_name, args.last().unwrap())?;
             if t != Type::String {
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
@@ -274,11 +306,11 @@ where
                     args.len()
                 );
             }
-            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            let t = typecheck_expr(scope, f_name, args.first().unwrap())?;
             if t != Type::String {
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
-            let t = typecheck_expr(scope, f_name, args.last().unwrap());
+            let t = typecheck_expr(scope, f_name, args.last().unwrap())?;
             if t != Type::String {
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
@@ -292,7 +324,7 @@ where
                     args.len()
                 );
             }
-            let t = typecheck_expr(scope, f_name, args.first().unwrap());
+            let t = typecheck_expr(scope, f_name, args.first().unwrap())?;
             if t != Type::String {
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
@@ -301,7 +333,7 @@ where
         //end of string library
         Expression::Call(name, args) => {
             match scope
-                .get(&name.extra.data.as_str())
+                .get(&(name.extra.data.as_str()).into())
                 .cloned()
                 .map(|x| x.extra.data)
             {
@@ -319,6 +351,7 @@ where
                         .into_iter()
                         .zip(args.iter().map(|x| typecheck_expr(scope, f_name, x)))
                     {
+                        let found = found?;
                         if expected != found {
                             will_crash = true;
                             eprintln!("On function {f_name}: In arguments for call to {name} expected {expected:?}, but found {found:?}")
@@ -343,8 +376,8 @@ where
             b,
         ) => match op {
             Operator::Add | Operator::Sub | Operator::Mod => {
-                let a_type = typecheck_expr(scope, f_name, a.as_ref());
-                let b_type = typecheck_expr(scope, f_name, b.as_ref());
+                let a_type = typecheck_expr(scope, f_name, a.as_ref())?;
+                let b_type = typecheck_expr(scope, f_name, b.as_ref())?;
                 if a_type != Type::Number {
                     panic!("On function {f_name}: LHS of {op} is not a number, it is a {a_type:?}");
                 }
@@ -355,8 +388,8 @@ where
                 Type::Number
             }
             Operator::GEt | Operator::Lt => {
-                let a_type = typecheck_expr(scope, f_name, a.as_ref());
-                let b_type = typecheck_expr(scope, f_name, b.as_ref());
+                let a_type = typecheck_expr(scope, f_name, a.as_ref())?;
+                let b_type = typecheck_expr(scope, f_name, b.as_ref())?;
 
                 if a_type != Type::Number {
                     panic!("On function {f_name}: LHS of {op} is not a number, it is a {a_type:?}");
@@ -368,8 +401,8 @@ where
                 Type::Bool
             }
             Operator::Eq => {
-                let a_type = typecheck_expr(scope, f_name, a.as_ref());
-                let b_type = typecheck_expr(scope, f_name, b.as_ref());
+                let a_type = typecheck_expr(scope, f_name, a.as_ref())?;
+                let b_type = typecheck_expr(scope, f_name, b.as_ref())?;
 
                 if b_type != a_type {
                     panic!(
@@ -383,12 +416,12 @@ where
         Expression::NumLit(_) => Type::Number,
         Expression::Variable(name) => {
             scope
-                .get(&name.as_str())
+                .get(&name.into())
                 .cloned()
                 .unwrap_or_else(|| panic!("On function {f_name}: Variable {name} not declared"))
                 .extra
                 .data
         }
         Expression::BoolLit(_) => Type::Bool,
-    }
+    })
 }

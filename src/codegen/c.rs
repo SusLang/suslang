@@ -50,6 +50,7 @@ where
     fn gen(&mut self, s: &Ast<'a>, buf: &mut W) -> std::io::Result<()> {
         match s {
             Ast::Mod(_) => Ok(()),
+            Ast::Import(_) => todo!(),
             Ast::Func(name, typ, args, block) => {
                 let mut name = name.extra.data.clone();
                 for (name_r, replace) in NAME_REPLACE {

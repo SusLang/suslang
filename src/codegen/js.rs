@@ -29,6 +29,7 @@ impl<'a, W: Write> Codegen<W, Ast<'a>> for Js {
     fn gen(&mut self, s: &Ast<'a>, buf: &mut W) -> std::io::Result<()> {
         match s {
             Ast::Mod(_) => (),
+            Ast::Import(_) => todo!(),
             Ast::Func(name, _, args, block) => {
                 write!(buf, "function {name}(")?;
                 for a in args

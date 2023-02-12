@@ -11,6 +11,7 @@ use codegen::Codegen;
 
 pub mod ast;
 pub mod codegen;
+pub mod error;
 pub mod fs;
 pub mod module;
 mod scope;

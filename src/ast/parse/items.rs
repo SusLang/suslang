@@ -21,6 +21,7 @@ use super::{
     error::IResult,
     identifier,
     inline_comment::ws,
+    path,
     spans::{spanned, MapExt, Span},
     statement::parse_block,
     typ::parse_type,
@@ -64,6 +65,7 @@ where
     );
 
     let mod_parser = delimited(ws(tag("room")), ws(identifier), ws(char('ඞ')));
+    let import_parser = delimited(ws(tag("vent")), ws(path), ws(char('ඞ')));
     ws(spanned(alt((
         map(task_parser, |(name, _, args, ret, block)| {
             Ast::Func(
@@ -78,6 +80,7 @@ where
         map(mod_parser, |mod_name| {
             Ast::Mod(mod_name.map(|x| x.0.into()))
         }),
+        map(import_parser, Ast::Import),
     ))))
     .parse(i)
 }

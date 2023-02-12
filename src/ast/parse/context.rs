@@ -18,4 +18,5 @@ pub enum Context {
     Declare,
     Type,
     While,
+    Path,
 }
