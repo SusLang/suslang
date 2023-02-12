@@ -13,6 +13,7 @@ pub mod ast;
 pub mod codegen;
 pub mod error;
 pub mod fs;
+pub mod linker;
 pub mod module;
 mod scope;
 // mod tokens;

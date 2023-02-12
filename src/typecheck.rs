@@ -9,7 +9,7 @@ use crate::{
         parse::spans::{ExtraData, MapExt, Span},
         Ast, Expression, Operator, Statement, Typ,
     },
-    error::{ItemNotFound, TypeCheckError},
+    error::{ExpressionTypeError, ItemNotFound, ModuleNotFoundError, TypeCheckError},
     module::Module,
     scope::{GlobalScope, Scope},
 };
@@ -48,7 +48,9 @@ pub fn typecheck(
             Ast::Import(path) => module_graph
                 .get_module(&path.extra.data[..(path.extra.data.len() - 1)])
                 .map_or_else(
-                    || panic!("Module {} not found", path.extra.data.join(".")),
+                    || -> Result<(), TypeCheckError> {
+                        Err(ModuleNotFoundError::from(path.clone().map(|_| ())).into())
+                    },
                     |module| {
                         if let Some((name, value)) = module
                             .get_exports()
@@ -57,7 +59,7 @@ pub fn typecheck(
                             scopes.add(name.into(), path.clone().map(|_| value.clone()));
                             Ok(())
                         } else {
-                            Err(ItemNotFound::from(path.clone().map(|_| ())))
+                            Err(ItemNotFound::from(path.clone().map(|_| *path.fragment())).into())
                         }
                     },
                 )?,
@@ -134,13 +136,19 @@ where
                     .map(|x| typecheck_expr(&mut scope, f_name, x))
                     .unwrap_or(Ok(Type::Void))?;
                 if e_type != ret.extra.data {
-                    panic!("Error on return type for function {f_name}: expected {ret:?} but found {e_type:?}")
+                    Err(ExpressionTypeError::from(
+                        x.clone()
+                            .map(|x| x.map(|_| ()))
+                            .unwrap_or_else(|| line.clone().map(|_| ()))
+                            .map(|()| (e_type, ret.extra.data.clone())),
+                    ))?;
+                    // panic!("Error on return type for function {f_name}: expected {ret:?} but found {e_type:?}")
                 }
                 break;
             }
             Statement::Expr(e) => {
                 // Typecheck expression
-                typecheck_expr(&mut scope, f_name, e);
+                typecheck_expr(&mut scope, f_name, e)?;
             }
             Statement::Declare(name, t) => {
                 scope.add(name.extra.data.as_str().into(), t.map(Into::into));

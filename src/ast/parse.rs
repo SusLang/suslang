@@ -7,7 +7,11 @@ use nom::{
     sequence::pair,
     Parser,
 };
-use nom_supreme::{context::ContextError, ParserExt};
+use nom_supreme::{
+    context::ContextError,
+    tag::{complete::tag, TagError},
+    ParserExt,
+};
 
 use crate::module::ModuleUsePath;
 
@@ -60,9 +64,9 @@ where
 
 pub fn path<'a, E>(input: Span<'a>) -> IResult<'a, E, ModuleUsePath>
 where
-    E: ParseError<Span<'a>> + ContextError<Span<'a>, Context>,
+    E: ParseError<Span<'a>> + ContextError<Span<'a>, Context> + TagError<Span<'a>, &'static str>,
 {
-    spanned(map(separated_list1(char('.'), identifier), |x| {
+    spanned(map(separated_list1(tag("<="), identifier), |x| {
         x.into_iter().map(|x| x.extra.data.0.into()).collect()
     }))
     .context(Context::Path)
