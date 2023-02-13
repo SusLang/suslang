@@ -50,7 +50,7 @@ pub use typecheck::typecheck;
 
 pub fn codegen_file<'a, C, P>(file: P, cod: &mut C, ast: &[Span<'a, Ast<'a>>])
 where
-    C: Codegen<BufWriter<File>, [Span<'a, Ast<'a>>]>,
+    C: Codegen<BufWriter<File>, [Span<'a, Ast<'a>>]> + ?Sized,
     P: AsRef<Path>,
 {
     let f = File::create(file).unwrap();

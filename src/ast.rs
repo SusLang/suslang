@@ -458,21 +458,21 @@ pub enum Ast<'a> {
 //     }
 // }
 
-macro_rules! span {
-    // `()` indicates that the macro takes no argument.
-    ($inner:pat) => {
-        LocatedSpan {
-            extra: ExtraData { data: $inner, .. },
-            ..
-        }
-    };
-}
-
 #[cfg(test)]
 mod testing {
+    macro_rules! span {
+        // `()` indicates that the macro takes no argument.
+        ($inner:pat) => {
+            LocatedSpan {
+                extra: ExtraData { data: $inner, .. },
+                ..
+            }
+        };
+    }
+
     use nom_locate::LocatedSpan;
 
-    use super::{parse::spans::ExtraData, Ast, Block, Statement, Typ};
+    use super::{parse::spans::ExtraData, Ast, Block, Typ};
 
     fn matches_func<'a, B: FnOnce(&Block) -> bool + 'a>(
         name: &'a str,

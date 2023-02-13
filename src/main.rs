@@ -1,19 +1,32 @@
-use miette::{ErrReport, GraphicalReportHandler, IntoDiagnostic};
+use std::{
+    fs::File,
+    io::BufWriter,
+    path::{Path, PathBuf},
+};
+
+use clap::Parser;
+use miette::GraphicalReportHandler;
 use suslang::{
-    ast::parse::{error::ParseError, items::parse_items, spans::load_file_str},
-    codegen, codegen_file,
-    error::TypeCheckError,
+    ast::{parse::spans::Span, Ast},
+    codegen::{self, Codegen},
+    codegen_file,
     fs::Filesystem,
-    linker::{self, link},
+    linker::{self},
     module::Module,
 };
 
-fn main() {
-    // println!("Hello, world!");
-    // let helloworld = include_str!("../examples/day1.sus");
-
+fn compile_file<
+    'a,
+    A: AsRef<Path>,
+    B: AsRef<Path>,
+    C: Codegen<BufWriter<File>, [Span<'a, Ast<'a>>]> + ?Sized,
+>(
+    input: &A,
+    output: &B,
+    codegen: &mut C,
+) {
     let mut fs = Filesystem::new();
-    let module = Module::new("examples/modules.sus".into(), &mut fs).unwrap();
+    let module = Module::new(input.as_ref().into(), &mut fs).unwrap();
 
     // println!("ROOT: ");
     // module.print_tree();
@@ -49,10 +62,7 @@ fn main() {
 
     let ast = linker::link(&module);
 
-    codegen_file("tmp.scm", &mut codegen::Scm, ast.as_slice());
-    codegen_file("tmp.c", &mut codegen::C, ast.as_slice());
-    codegen_file("tmp.js", &mut codegen::Js, ast.as_slice());
-    codegen_file("tmp.py", &mut codegen::Py::new(), ast.as_slice());
+    codegen_file(output, codegen, ast.as_slice());
 
     // let file = dbg!(load_file_str(
     //     &"test.sus",
@@ -61,4 +71,35 @@ fn main() {
     // println!("RESULT: {:#?}", parse_expr::<ParseError<_>>(file));
     drop(module);
     drop(fs);
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum, Debug)]
+enum Backends {
+    C,
+    Js,
+    Javascript,
+    Py,
+    Python,
+    Scm,
+}
+
+#[derive(Debug, clap::Parser)]
+struct Arguments {
+    input: PathBuf,
+    output: PathBuf,
+    backend: Backends,
+}
+
+fn main() {
+    let args = Arguments::parse();
+    // dbg!(&args);
+    // println!("Hello, world!");
+    // let helloworld = include_str!("../examples/day1.sus");
+    let mut codegen: Box<dyn Codegen<BufWriter<File>, [Span<Ast>]>> = match args.backend {
+        Backends::C => Box::new(codegen::C),
+        Backends::Js | Backends::Javascript => Box::new(codegen::Js),
+        Backends::Py | Backends::Python => Box::new(codegen::Py::new()),
+        Backends::Scm => Box::new(codegen::Scm),
+    };
+    compile_file(&args.input, &args.output, codegen.as_mut())
 }
