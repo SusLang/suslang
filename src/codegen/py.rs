@@ -94,7 +94,7 @@ where
             Ast::Mod(_) => Ok(()),
             Ast::Import(_) => todo!(),
             Ast::Func(name, _typ, args, block) => {
-                write!(buf, "def {name}(")?;
+                write!(buf, "def {}(", name.extra.data)?;
                 for a in args
                     .iter()
                     .map(|s| &s.extra.data)
@@ -102,7 +102,7 @@ where
                     .skip(1)
                 {
                     if let Some(a) = a {
-                        write!(buf, "{a}")?;
+                        write!(buf, "{}", a.extra.data)?;
                     } else {
                         write!(buf, ", ")?;
                     }
@@ -172,12 +172,12 @@ where
                 buf,
                 "{}{} = {}",
                 "\t".repeat(self.tab_count),
-                name,
+                name.extra.data,
                 default_value(&typ.extra.data)
             )
             .unwrap(),
             Statement::Define(name, expr) => {
-                write!(buf, "{}{} = ", "\t".repeat(self.tab_count), name)?;
+                write!(buf, "{}{} = ", "\t".repeat(self.tab_count), name.extra.data)?;
                 self.gen(expr, buf)?;
                 writeln!(buf)?;
             }
@@ -193,7 +193,7 @@ where
     fn gen(&mut self, expr: &Expression, buf: &mut W) -> std::io::Result<()> {
         match expr {
             Expression::Call(func, args) => {
-                write!(buf, "{func}(")?;
+                write!(buf, "{}(", func.extra.data)?;
                 for t in args.iter().flat_map(|x| [None, Some(x)]).skip(1) {
                     if let Some(x) = t {
                         self.gen(x, buf)?;

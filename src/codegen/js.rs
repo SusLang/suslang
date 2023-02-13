@@ -31,7 +31,7 @@ impl<'a, W: Write> Codegen<W, Ast<'a>> for Js {
             Ast::Mod(_) => (),
             Ast::Import(_) => todo!(),
             Ast::Func(name, _, args, block) => {
-                write!(buf, "function {name}(")?;
+                write!(buf, "function {}(", name.extra.data)?;
                 for a in args
                     .iter()
                     .map(|a| &a.extra.data)
@@ -39,7 +39,7 @@ impl<'a, W: Write> Codegen<W, Ast<'a>> for Js {
                     .skip(1)
                 {
                     if let Some(a) = a {
-                        write!(buf, "{a}")?;
+                        write!(buf, "{}", a.extra.data)?;
                     } else {
                         write!(buf, ", ")?;
                     }
@@ -93,9 +93,9 @@ impl<'a, W: Write> Codegen<W, Statement<'a>> for Js {
                 self.gen(e, buf)?;
                 writeln!(buf, ";")?;
             }
-            Statement::Declare(name, _) => writeln!(buf, "let {name};")?,
+            Statement::Declare(name, _) => writeln!(buf, "let {};", name.extra.data)?,
             Statement::Define(name, e) => {
-                write!(buf, "{name} = ")?;
+                write!(buf, "{} = ", name.extra.data)?;
                 self.gen(e, buf)?;
                 writeln!(buf, ";")?;
             }
@@ -108,7 +108,7 @@ impl<'a, W: Write> Codegen<W, Expression<'a>> for Js {
     fn gen(&mut self, s: &Expression, buf: &mut W) -> std::io::Result<()> {
         match s {
             Expression::Call(name, args) => {
-                write!(buf, "{name}(")?;
+                write!(buf, "{}(", name.extra.data)?;
                 for t in args.iter().flat_map(|x| [None, Some(x)]).skip(1) {
                     if let Some(x) = t {
                         self.gen(x, buf)?;

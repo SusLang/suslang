@@ -14,7 +14,7 @@ use crate::{
     scope::{GlobalScope, Scope},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Function(Vec<Self>, Box<Self>),
     Void,
@@ -45,6 +45,7 @@ pub fn typecheck(
     for a in a {
         match &a.extra.data {
             Ast::Mod(_) => (),
+            // FIXME Imports realtive to root
             Ast::Import(path) => module_graph
                 .get_module(&path.extra.data[..(path.extra.data.len() - 1)])
                 .map_or_else(

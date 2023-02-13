@@ -50,7 +50,7 @@ where
     fn gen(&mut self, s: &Ast<'a>, buf: &mut W) -> std::io::Result<()> {
         match s {
             Ast::Mod(_) => Ok(()),
-            Ast::Import(_) => todo!(),
+            Ast::Import(_) => unreachable!(),
             Ast::Func(name, typ, args, block) => {
                 let mut name = name.extra.data.clone();
                 for (name_r, replace) in NAME_REPLACE {
@@ -67,7 +67,7 @@ where
                         buf,
                         "{} {}{}",
                         Self::typename(&typ.extra.data),
-                        name,
+                        name.extra.data,
                         if i == args_len - 1 { "" } else { ", " }
                     )?;
                 }
@@ -116,11 +116,15 @@ where
                 }
                 writeln!(buf, "}}")?;
             }
-            Statement::Declare(name, typ) => {
-                writeln!(buf, "{} {};", Self::typename(&typ.extra.data), name).unwrap()
-            }
+            Statement::Declare(name, typ) => writeln!(
+                buf,
+                "{} {};",
+                Self::typename(&typ.extra.data),
+                name.extra.data
+            )
+            .unwrap(),
             Statement::Define(name, expr) => {
-                write!(buf, "{name} = ")?;
+                write!(buf, "{} = ", name.extra.data)?;
                 self.gen(expr, buf)?;
                 writeln!(buf, ";")?;
             }

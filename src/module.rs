@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, hash::Hash, path::PathBuf};
 
 use crate::{
     ast::{
@@ -13,12 +13,21 @@ use crate::{
     typecheck::Type,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Module<'a> {
     pub items: Vec<Span<'a, Ast<'a>>>,
     pub submodules: HashMap<String, Module<'a>>,
     pub exports: Option<HashMap<String, Type>>,
     pub path: ModuleUsePath,
+}
+
+impl<'a> Hash for Module<'a> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.items.hash(state);
+        // self.submodules.hash(state);
+        // self.exports.hash(state);
+        self.path.hash(state);
+    }
 }
 
 impl<'a> Module<'a> {

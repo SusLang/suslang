@@ -4,7 +4,7 @@ use suslang::{
     codegen, codegen_file,
     error::TypeCheckError,
     fs::Filesystem,
-    linker,
+    linker::{self, link},
     module::Module,
 };
 
@@ -26,14 +26,13 @@ fn main() {
 
     // let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
     // // println!("{res:#?}");
-    let ast = &module.items;
     // .into_iter()
     // .map(|s| s.extra.data)
     // .collect::<Vec<_>>();
 
     // let ast = suslang::parse_str(helloworld);
 
-    if let Err(report) = suslang::typecheck(ast, &module) {
+    if let Err(report) = suslang::typecheck(&module.items, &module) {
         let handler = GraphicalReportHandler::new();
         let mut buf = String::new();
         handler.render_report(&mut buf, &report).unwrap();

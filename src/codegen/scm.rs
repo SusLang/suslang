@@ -79,10 +79,10 @@ where
             Ast::Mod(_) => (),
             Ast::Import(_) => todo!(),
             Ast::Func(name, _, args, blocks) => {
-                write!(buf, "( define ( {name} ")?;
+                write!(buf, "( define ( {} ", name.extra.data)?;
                 for arg in args.iter() {
                     let (name, _) = &arg.extra.data;
-                    write!(buf, "{name} ")?;
+                    write!(buf, "{} ", name.extra.data)?;
                 }
                 writeln!(buf, ")")?;
 
@@ -207,7 +207,7 @@ where
                 }
                 writeln!(buf, ")")?;*/
                 write_eval(
-                    name,
+                    &name.extra.data,
                     args.iter()
                         .map(|x| x as &dyn Codegeneable<W, Self>)
                         .collect::<Vec<_>>()

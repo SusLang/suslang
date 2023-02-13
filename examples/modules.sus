@@ -1,7 +1,7 @@
 room libඞ
 (*room ifsඞ*)
 vent lib<=fiboඞ
-vent modඞ
+(*vent modඞ*)
 task ඬ with ➤ number
 චcomplete report with "%d\n" and complete fibo with 30ඞ
 චeject 0ඞ
