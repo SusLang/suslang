@@ -9,7 +9,9 @@ use crate::{
         parse::spans::{ExtraData, MapExt, Span},
         Ast, Expression, Operator, Statement, Typ,
     },
-    error::{ExpressionTypeError, ItemNotFound, ModuleNotFoundError, TypeCheckError},
+    error::{
+        ExpressionTypeError, FunctionNotFound, ItemNotFound, ModuleNotFoundError, TypeCheckError, FunctionArgumentNumber, FunctionArgumentTypeError,
+    },
     module::Module,
     scope::{GlobalScope, Scope},
 };
@@ -115,7 +117,10 @@ where
                 // typecheck condition
                 let e_type = typecheck_expr(&mut scope, f_name, cond)?;
                 if e_type != Type::Bool {
-                    panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
+                    return Err(TypeCheckError::ExpressionTypeError(
+                        ExpressionTypeError::from(cond.clone().map(|_| (e_type, Type::Bool))),
+                    ));
+                    // panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
                 }
                 typecheck_body(scope.push(), f_name, ret, &body.extra.data)?;
                 if let Some(else_body) = else_body.as_ref() {
@@ -126,7 +131,10 @@ where
                 // typecheck condition
                 let e_type = typecheck_expr(&mut scope, f_name, cond)?;
                 if e_type != Type::Bool {
-                    panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
+                    return Err(TypeCheckError::ExpressionTypeError(
+                        ExpressionTypeError::from(cond.clone().map(|_| (e_type, Type::Bool))),
+                    ));
+                    // panic!("Error on if condition in function {f_name}: Expected Bool but found {e_type:?}")
                 }
                 typecheck_body(scope.push(), f_name, ret, &body.extra.data)?;
             }
@@ -156,15 +164,23 @@ where
             }
             Statement::Define(name, e) => {
                 let t = scope.get(&name.extra.data.as_str().into()).cloned();
-                t.map_or_else(|| {
-                    panic!("{name} is not defined");
-                }, |t| -> Result<(), TypeCheckError> {
-                    let e_type = typecheck_expr(&mut scope, f_name, e)?;
-                    if t.extra.data != e_type {
-                        panic!("Error on variable assigment in function {f_name}: Expected {t:?}, but found {e_type:?}");
-                    }
-                    Ok(())
-                })?
+                t.map_or_else(
+                    || {
+                        panic!("{name} is not defined");
+                    },
+                    |t| -> Result<(), TypeCheckError> {
+                        let e_type = typecheck_expr(&mut scope, f_name, e)?;
+                        if t.extra.data != e_type {
+                            return Err(TypeCheckError::ExpressionTypeError(
+                                ExpressionTypeError::from(
+                                    e.clone().map(|_| (e_type, t.extra.data)),
+                                ),
+                            ));
+                            // panic!("Error on variable assigment in function {f_name}: Expected {t:?}, but found {e_type:?}");
+                        }
+                        Ok(())
+                    },
+                )?
             }
         }
     }
@@ -230,7 +246,7 @@ where
             Type::Void
         }
 
-        Expression::Call(name, args) if name.extra.data == "len" => {
+        /*Expression::Call(name, args) if name.extra.data == "len" => {
             if args.len() != 1 {
                 panic!(
                     "On function {f_name}: Expected 1 argument for len, found {}",
@@ -338,7 +354,7 @@ where
                 panic!("On function {f_name}: Expected String, found {t:?}");
             }
             Type::String // technically it's a list of strings, but we don't have that yet
-        }
+        }*/
         //end of string library
         Expression::Call(name, args) => {
             match scope
@@ -348,32 +364,40 @@ where
             {
                 Some(Type::Function(args_t, ret)) => {
                     if args.len() != args_t.len() {
-                        panic!(
-                            "On function {f_name}: Expected {} arguments, but found {}",
-                            args_t.len(),
-                            args.len()
-                        )
+                        return Err(FunctionArgumentNumber::from(e.clone().map(|_| (name.extra.data.clone(), args_t.len(), args.len()))).into());
                     }
                     // let args_t = args_t.clone();
-                    let mut will_crash = false;
-                    for (expected, found) in args_t
+                    // let mut wiFunctionArgumentTypeErrorll_crash = false;
+                    let mut errors = Vec::new();
+                    for (expected, (ex, found)) in args_t
                         .into_iter()
-                        .zip(args.iter().map(|x| typecheck_expr(scope, f_name, x)))
+                        .zip(args.iter().map(|x| (x, typecheck_expr(scope, f_name, x))))
                     {
                         let found = found?;
                         if expected != found {
-                            will_crash = true;
-                            eprintln!("On function {f_name}: In arguments for call to {name} expected {expected:?}, but found {found:?}")
+                            // will_crash = true;
+                            errors.push(ExpressionTypeError::from(ex.clone().map(|_| (expected, found))));
+                            // eprintln!("On function {f_name}: In arguments for call to {name} expected {expected:?}, but found {found:?}")
                         }
                     }
-                    if will_crash {
-                        panic!("On function {f_name}: Error on function arguments")
+                    if !errors.is_empty() {
+                        return Err(TypeCheckError::FunctionArgumentTypeError(FunctionArgumentTypeError {
+                            related: errors,
+                            function_name: name.extra.data.clone(),
+                        }))
                     }
+                    // if will_crash {
+                    //     panic!("On function {f_name}: Error on function arguments")
+                    // }
                     *ret
                 }
                 Some(_) => panic!("{name} is not callable"),
                 //None => Type::Void,
-                None => panic!("On function {f_name}: function {name} is not defined"),
+                None => {
+                    return Err(TypeCheckError::FunctionNotFound(FunctionNotFound::from(
+                        name.clone(),
+                    )))
+                }
             }
         }
         Expression::Operation(

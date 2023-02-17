@@ -15,37 +15,8 @@ use suslang::{
     module::Module,
 };
 
-fn compile_file<
-    'a,
-    A: AsRef<Path>,
-    B: AsRef<Path>,
-    C: Codegen<BufWriter<File>, [Span<'a, Ast<'a>>]> + ?Sized,
->(
-    input: &A,
-    output: &B,
-    codegen: &mut C,
-) {
-    let mut fs = Filesystem::new();
-    let module = Module::new(input.as_ref().into(), &mut fs).unwrap();
-
-    // println!("ROOT: ");
-    // module.print_tree();
-
-    // dbg!(module.get_module(&["ifs".into()]));
-    // dbg!(module.get_module(&["lib".into()]));
-    // dbg!(module.get_module(&["lib".into(), "ifs".into()]));
-    // dbg!(module.get_module(&["lib".into(), "a".into()]));
-    // dbg!(module.get_module(&[]));
-
-    // let res = parse_items::<ParseError<_>>(load_file_str(&"../examples/day1.sus", helloworld));
-    // // println!("{res:#?}");
-    // .into_iter()
-    // .map(|s| s.extra.data)
-    // .collect::<Vec<_>>();
-
-    // let ast = suslang::parse_str(helloworld);
-
-    if let Err(report) = suslang::typecheck(&module.items, &module) {
+fn check_module_graph(module_graph: &Module) {
+    if let Err(report) = suslang::typecheck(&module_graph.items, &module_graph) {
         let handler = GraphicalReportHandler::new();
         let mut buf = String::new();
         handler.render_report(&mut buf, &report).unwrap();
@@ -59,16 +30,36 @@ fn compile_file<
         // }
         std::process::exit(1);
     }
+}
+
+fn compile_file<
+    'a,
+    A: AsRef<Path>,
+    B: AsRef<Path>,
+    C: Codegen<BufWriter<File>, [Span<'a, Ast<'a>>]> + ?Sized,
+>(
+    input: &A,
+    output: &B,
+    codegen: &mut C,
+) {
+    let mut fs = Filesystem::new();
+    let module = Module::new(input.as_ref().into(), &mut fs).unwrap();
+
+    check_module_graph(&module);
 
     let ast = linker::link(&module);
 
     codegen_file(output, codegen, ast.as_slice());
+    drop(module);
+    drop(fs);
+}
 
-    // let file = dbg!(load_file_str(
-    //     &"test.sus",
-    //     r#"+ 1 complete report with "%d %s\n" and (complete add with - 1 3 and 0b10) and "AA""#
-    // ));
-    // println!("RESULT: {:#?}", parse_expr::<ParseError<_>>(file));
+fn check<A: AsRef<Path>>(input: &A) {
+    let mut fs = Filesystem::new();
+    let module = Module::new(input.as_ref().into(), &mut fs).unwrap();
+
+    check_module_graph(&module);
+
     drop(module);
     drop(fs);
 }
@@ -86,8 +77,25 @@ enum Backends {
 #[derive(Debug, clap::Parser)]
 struct Arguments {
     input: PathBuf,
-    output: PathBuf,
-    backend: Backends,
+    // #[arg(conflicts_with_all = ["output", "backend"])]
+    // #[arg(long)]
+    // check: bool,
+    // #[arg(conflicts_with = "check")]
+    // #[arg(requires = "backend")]
+    // #[arg(required_unless_present = "check")]
+    // output: Option<PathBuf>,
+    // #[arg(requires = "output")]
+    // #[arg(required_unless_present = "check")]
+    // #[arg(short)]
+    // backend: Option<Backends>,
+    #[command(subcommand)]
+    subcommand: Subcommands,
+}
+
+#[derive(Debug, Clone, clap::Subcommand)]
+enum Subcommands {
+    Check,
+    Build { output: PathBuf, backend: Backends },
 }
 
 fn main() {
@@ -95,11 +103,30 @@ fn main() {
     // dbg!(&args);
     // println!("Hello, world!");
     // let helloworld = include_str!("../examples/day1.sus");
-    let mut codegen: Box<dyn Codegen<BufWriter<File>, [Span<Ast>]>> = match args.backend {
-        Backends::C => Box::new(codegen::C),
-        Backends::Js | Backends::Javascript => Box::new(codegen::Js),
-        Backends::Py | Backends::Python => Box::new(codegen::Py::new()),
-        Backends::Scm => Box::new(codegen::Scm),
-    };
-    compile_file(&args.input, &args.output, codegen.as_mut())
+    match args.subcommand {
+        Subcommands::Check => {
+            check(&args.input);
+            println!("OK");
+        },
+        Subcommands::Build { output, backend } => {
+            let mut codegen: Box<dyn Codegen<BufWriter<File>, [Span<Ast>]>> = match backend {
+                Backends::C => Box::new(codegen::C),
+                Backends::Js | Backends::Javascript => Box::new(codegen::Js),
+                Backends::Py | Backends::Python => Box::new(codegen::Py::new()),
+                Backends::Scm => Box::new(codegen::Scm),
+            };
+            compile_file(&args.input, &output, codegen.as_mut())
+        }
+    }
+    // if let Some((output, backend)) = args.output.zip(args.backend) {
+    //     let mut codegen: Box<dyn Codegen<BufWriter<File>, [Span<Ast>]>> = match backend {
+    //         Backends::C => Box::new(codegen::C),
+    //         Backends::Js | Backends::Javascript => Box::new(codegen::Js),
+    //         Backends::Py | Backends::Python => Box::new(codegen::Py::new()),
+    //         Backends::Scm => Box::new(codegen::Scm),
+    //     };
+    //     compile_file(&args.input, &output, codegen.as_mut())
+    // }else if args.check {
+    //     check(&args.input)
+    // }
 }
