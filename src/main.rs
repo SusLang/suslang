@@ -16,20 +16,23 @@ use suslang::{
 };
 
 fn check_module_graph(module_graph: &Module) {
-    if let Err(report) = suslang::typecheck(&module_graph.items, &module_graph) {
-        let handler = GraphicalReportHandler::new();
-        let mut buf = String::new();
-        handler.render_report(&mut buf, &report).unwrap();
-        println!("{buf}");
-        // match report {
-        //     TypeCheckError::ItemNotFound(e) => {
-        //         let r = miette::Report::from(e);
-        //         eprintln!("{r:?}");
-        //     }
-        //     e => eprintln!("{e}"),
-        // }
-        std::process::exit(1);
+    for module in module_graph.iter() {
+        if let Err(report) = suslang::typecheck(&module.items, module_graph) {
+            let handler = GraphicalReportHandler::new();
+            let mut buf = String::new();
+            handler.render_report(&mut buf, &report).unwrap();
+            println!("{buf}");
+            // match report {
+            //     TypeCheckError::ItemNotFound(e) => {
+            //         let r = miette::Report::from(e);
+            //         eprintln!("{r:?}");
+            //     }
+            //     e => eprintln!("{e}"),
+            // }
+            std::process::exit(1);
+        }
     }
+    
 }
 
 fn compile_file<

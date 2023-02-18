@@ -130,6 +130,10 @@ impl<'a> Module<'a> {
         }
     }
 
+    pub fn iter<'b>(&'b self) -> impl Iterator<Item = &'b Module<'a>> {
+        std::iter::once_with(move || self).chain(self.submodules.values().flat_map(|m| m.iter()).collect::<Vec<_>>().into_iter())
+    }
+
     pub fn print_tree(&self) {
         self.print_tree_inner(0);
     }
