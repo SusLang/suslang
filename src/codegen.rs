@@ -1,7 +1,22 @@
+#[cfg(feature = "backend-c")]
 mod c;
+#[cfg(feature = "backend-c")]
+pub use c::C;
+
+#[cfg(feature = "backend-js")]
 mod js;
+#[cfg(feature = "backend-js")]
+pub use js::Js;
+
+#[cfg(feature = "backend-python")]
 mod py;
+#[cfg(feature = "backend-python")]
+pub use py::Py;
+
+#[cfg(feature = "backend-scm")]
 mod scm;
+#[cfg(feature = "backend-scm")]
+pub use scm::Scm;
 
 use std::io::Write;
 
@@ -36,10 +51,5 @@ where
         codegen.gen(self, buf)
     }
 }
-
-pub use c::C;
-pub use js::Js;
-pub use py::Py;
-pub use scm::Scm;
 
 use crate::ast::{parse::spans::Span, Typ};

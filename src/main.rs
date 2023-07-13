@@ -69,11 +69,17 @@ fn check<A: AsRef<Path>>(input: &A) {
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, clap::ValueEnum, Debug)]
 enum Backends {
+    #[cfg(feature = "backend-c")]
     C,
+    #[cfg(feature = "backend-js")]
     Js,
+    #[cfg(feature = "backend-js")]
     Javascript,
+    #[cfg(feature = "backend-python")]
     Py,
+    #[cfg(feature = "backend-python")]
     Python,
+    #[cfg(feature = "backend-scm")]
     Scm,
 }
 
@@ -113,9 +119,13 @@ fn main() {
         },
         Subcommands::Build { output, backend } => {
             let mut codegen: Box<dyn Codegen<BufWriter<File>, [Span<Ast>]>> = match backend {
+                #[cfg(feature = "backend-c")]
                 Backends::C => Box::new(codegen::C),
+                #[cfg(feature = "backend-js")]
                 Backends::Js | Backends::Javascript => Box::new(codegen::Js),
+                #[cfg(feature = "backend-python")]
                 Backends::Py | Backends::Python => Box::new(codegen::Py::new()),
+                #[cfg(feature = "backend-scm")]
                 Backends::Scm => Box::new(codegen::Scm),
             };
             compile_file(&args.input, &output, codegen.as_mut())
